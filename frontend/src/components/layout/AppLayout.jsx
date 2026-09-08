@@ -18,7 +18,6 @@ import { useTheme } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import MenuIcon from '@mui/icons-material/Menu';
-import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined';
 
 const NAV_ITEMS = [
@@ -32,7 +31,7 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const currentToast = toasts?.[0];
