@@ -179,9 +179,9 @@ export default function ReportPage() {
           sx={{ mb: 4, '& .MuiAlert-message': { width: '100%' } }}
         >
           <AlertTitle>AI explanation: {scan.aiExplanation.overallAssessment}</AlertTitle>
-          <Typography variant="body2">{scan.aiExplanation.userExplanation || scan.aiExplanation.summary}</Typography>
+          <Typography variant="body2" sx={{ color: '#ff9f43' }}>{scan.aiExplanation.userExplanation || scan.aiExplanation.summary}</Typography>
           {scan.ocrResult?.confidence < 60 && (
-            <Typography variant="body2" sx={{ mt: 1 }}>
+            <Typography variant="body2" sx={{ mt: 1, color: '#ff9f43' }}>
               The image text was read with low confidence ({scan.ocrResult.confidence.toFixed(0)}%). Capture a clearer image with better lighting and make sure the label text is visible.
             </Typography>
           )}
