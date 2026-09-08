@@ -27,6 +27,12 @@ const NAV_ITEMS = [
   { label: 'Resource', path: '/history' },
 ];
 
+const STARS = [
+  [6, 18, 1], [14, 72, 2], [22, 34, 1], [31, 12, 2], [39, 82, 1],
+  [48, 26, 1], [56, 64, 2], [64, 8, 1], [73, 43, 1], [82, 78, 2],
+  [91, 22, 1], [96, 58, 1], [11, 92, 1], [27, 60, 2], [68, 90, 1],
+];
+
 export default function AppLayout({ children, toasts, onRemoveToast }) {
   const theme = useTheme();
   const location = useLocation();
@@ -37,7 +43,12 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
   const currentToast = toasts?.[0];
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <Box aria-hidden="true" sx={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        {STARS.map(([top, left, size], index) => (
+          <Box key={index} sx={{ position: 'absolute', top: `${top}%`, left: `${left}%`, width: size * 2, height: size * 2, borderRadius: '50%', bgcolor: '#fff', opacity: size === 2 ? 0.7 : 0.42, animation: `starTwinkle ${2.8 + (index % 4) * 0.7}s ease-in-out ${(index % 5) * 0.35}s infinite`, '@keyframes starTwinkle': { '0%, 100%': { opacity: size === 2 ? 0.28 : 0.18, transform: 'scale(0.8)' }, '50%': { opacity: size === 2 ? 0.9 : 0.62, transform: 'scale(1.25)' } } }} />
+        ))}
+      </Box>
       {/* AppBar */}
       <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1, bgcolor: 'transparent', border: 0, boxShadow: 'none', pt: 1.5 }}>
         <Toolbar sx={{ gap: 1.5, maxWidth: 900, width: 'calc(100% - 32px)', mx: 'auto', minHeight: '48px !important', px: '10px !important', borderRadius: 99, bgcolor: '#111', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.16)' }}>
@@ -101,10 +112,10 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
           {!isMobile && (
             <Button
               size="small"
-              onClick={() => navigate('/scan')}
+              onClick={() => navigate('/signin')}
               sx={{ ml: 0.5, px: 1.5, py: 0.65, borderRadius: 99, bgcolor: '#fff', color: '#111', fontSize: '0.68rem', '&:hover': { bgcolor: '#e5e5e5' } }}
             >
-              hello@jarvis.ai
+              Sign in
             </Button>
           )}
         </Toolbar>
@@ -140,7 +151,7 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
       </Drawer>
 
       {/* Main Content */}
-      <Box component="main" sx={{ flex: 1, pt: '64px' }}>
+      <Box component="main" sx={{ flex: 1, pt: '64px', position: 'relative', zIndex: 1 }}>
         {children}
       </Box>
 
