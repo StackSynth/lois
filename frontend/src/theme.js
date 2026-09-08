@@ -4,20 +4,20 @@ const getTheme = (mode) => createTheme({
   palette: {
     mode,
     ...(mode === 'light' ? {
-      primary: { main: '#1565c0', light: '#1976d2', dark: '#0d47a1' },
-      secondary: { main: '#7c3aed' },
-      background: { default: '#f5f7fa', paper: '#ffffff' },
-      text: { primary: '#1e293b', secondary: '#64748b' },
+      primary: { main: '#111111', light: '#333333', dark: '#000000' },
+      secondary: { main: '#666666' },
+      background: { default: '#f5f5f3', paper: '#ffffff' },
+      text: { primary: '#111111', secondary: '#666666' },
       success: { main: '#16a34a', light: '#dcfce7', dark: '#15803d' },
       warning: { main: '#d97706', light: '#fef3c7', dark: '#b45309' },
       error: { main: '#dc2626', light: '#fee2e2', dark: '#b91c1c' },
       info: { main: '#0891b2' },
       divider: 'rgba(0,0,0,0.08)',
     } : {
-      primary: { main: '#3b82f6', light: '#60a5fa', dark: '#2563eb' },
-      secondary: { main: '#8b5cf6' },
-      background: { default: '#0a0f1a', paper: '#111827' },
-      text: { primary: '#f1f5f9', secondary: '#94a3b8' },
+      primary: { main: '#ffffff', light: '#ffffff', dark: '#d4d4d4' },
+      secondary: { main: '#bdbdbd' },
+      background: { default: '#0b0b0b', paper: '#151515' },
+      text: { primary: '#f5f5f5', secondary: '#a3a3a3' },
       success: { main: '#22c55e', light: 'rgba(34,197,94,0.12)', dark: '#16a34a' },
       warning: { main: '#f59e0b', light: 'rgba(245,158,11,0.12)', dark: '#d97706' },
       error: { main: '#ef4444', light: 'rgba(239,68,68,0.12)', dark: '#dc2626' },
@@ -59,7 +59,7 @@ const getTheme = (mode) => createTheme({
         root: {
           backdropFilter: 'blur(12px)',
           borderBottom: `1px solid ${mode === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'}`,
-          background: mode === 'light' ? 'rgba(255,255,255,0.85)' : 'rgba(10,15,26,0.85)',
+          background: mode === 'light' ? 'rgba(245,245,243,0.9)' : 'rgba(11,11,11,0.9)',
         },
       },
     },
@@ -79,8 +79,8 @@ const getTheme = (mode) => createTheme({
       styleOverrides: {
         root: { borderRadius: 10, padding: '8px 20px' },
         containedPrimary: {
-          boxShadow: '0 2px 8px rgba(59,130,246,0.25)',
-          '&:hover': { boxShadow: '0 4px 16px rgba(59,130,246,0.35)' },
+          boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          '&:hover': { boxShadow: '0 4px 16px rgba(0,0,0,0.28)' },
         },
       },
     },

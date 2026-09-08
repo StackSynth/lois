@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
@@ -6,6 +7,7 @@ import { scanRoutes } from './routes/scanRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, '..', '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -24,6 +26,14 @@ app.use('/api', scanRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'jarvis-compliance-checker', timestamp: new Date().toISOString() });
+});
+
+// Serve the built React app from the same host as the API.
+const frontendDist = join(__dirname, '..', '..', 'frontend', 'dist');
+app.use(express.static(frontendDist));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+  res.sendFile(join(frontendDist, 'index.html'));
 });
 
 // Error handling middleware

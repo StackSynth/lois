@@ -9,6 +9,7 @@ import { validateCompliance } from '../rules/ruleEngine.js';
 import { scanStore } from '../store/scanStore.js';
 import { createScan } from '../models/Scan.js';
 import { demoProducts } from '../demo/demoData.js';
+import { generateExplanation } from '../ai/explanationService.js';
 
 /**
  * POST /api/scan — Full pipeline: image → OCR → extract → validate → store
@@ -38,6 +39,12 @@ export async function scanImage(req, res, next) {
     const productNameField = extractedFields.find(f => f.field === 'productName');
     const productName = productNameField?.value || 'Unknown Product';
 
+    const aiExplanation = await generateExplanation({
+      product: { name: productName, category },
+      extractedFields,
+      ruleResults
+    });
+
     // Step 6: Store result
     const scan = createScan({
       id: scanId,
@@ -53,7 +60,8 @@ export async function scanImage(req, res, next) {
       complianceScore,
       overallStatus,
       isDemo: false,
-      summary
+      summary,
+      aiExplanation
     });
 
     scanStore.create(scan);

@@ -43,6 +43,7 @@
  * @property {string} overallStatus - COMPLIANT | NEEDS_ATTENTION | NON_COMPLIANT
  * @property {boolean} isDemo - Whether this is demo data
  * @property {Object} summary - Compliance summary counts
+ * @property {Object|null} aiExplanation - AI explanation based on extracted fields and rule results
  * @property {number} summary.compliant - Count of compliant rules
  * @property {number} summary.missing - Count of missing fields
  * @property {number} summary.invalid - Count of invalid fields
@@ -62,6 +63,7 @@ export function createScan(data) {
     complianceScore: data.complianceScore ?? 0,
     overallStatus: data.overallStatus || 'NON_COMPLIANT',
     isDemo: data.isDemo || false,
-    summary: data.summary || { compliant: 0, missing: 0, invalid: 0, review: 0, notApplicable: 0 }
+    summary: data.summary || { compliant: 0, missing: 0, invalid: 0, review: 0, notApplicable: 0 },
+    aiExplanation: data.aiExplanation || null
   };
 }

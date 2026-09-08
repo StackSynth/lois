@@ -171,6 +171,23 @@ export default function ReportPage() {
         </CardContent>
       </Card>
 
+      {/* AI response and OCR quality summary */}
+      {scan.aiExplanation && (
+        <Alert
+          severity={scan.aiExplanation.overallAssessment === 'PASS' ? 'success' : scan.aiExplanation.overallAssessment === 'FAIL' ? 'error' : 'warning'}
+          icon={<SmartToyIcon />}
+          sx={{ mb: 4, '& .MuiAlert-message': { width: '100%' } }}
+        >
+          <AlertTitle>AI explanation: {scan.aiExplanation.overallAssessment}</AlertTitle>
+          <Typography variant="body2">{scan.aiExplanation.userExplanation || scan.aiExplanation.summary}</Typography>
+          {scan.ocrResult?.confidence < 60 && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              The image text was read with low confidence ({scan.ocrResult.confidence.toFixed(0)}%). Capture a clearer image with better lighting and make sure the label text is visible.
+            </Typography>
+          )}
+        </Alert>
+      )}
+
       {/* AI Extracted Information */}
       <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
         <SmartToyIcon color="primary" /> AI Extracted Information
@@ -289,7 +306,7 @@ export default function ReportPage() {
       )}
 
       {/* AI Explanation */}
-      <Accordion sx={{ mb: 4 }}>
+      <Accordion defaultExpanded sx={{ mb: 4 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SmartToyIcon color="primary" />
@@ -298,9 +315,32 @@ export default function ReportPage() {
           </Box>
         </AccordionSummary>
         <AccordionDetails>
-          <Typography variant="body2" color="text.secondary">
-            This compliance report was generated using AI-powered text extraction and rule-based validation against the Legal Metrology (Packaged Commodities) Rules, 2011. Each field is extracted with a confidence score, and compliance is determined by matching extracted values against mandatory declaration requirements.
-          </Typography>
+          {scan.aiExplanation ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Alert severity={scan.aiExplanation.overallAssessment === 'PASS' ? 'success' : scan.aiExplanation.overallAssessment === 'FAIL' ? 'error' : 'warning'}>
+                <AlertTitle>{scan.aiExplanation.overallAssessment}</AlertTitle>
+                {scan.aiExplanation.summary}
+              </Alert>
+              <Typography variant="body2">{scan.aiExplanation.userExplanation}</Typography>
+              {scan.aiExplanation.issues?.map((issue, index) => (
+                <Alert key={`${issue.field}-${index}`} severity={issue.status === 'FAIL' ? 'error' : 'warning'}>
+                  <AlertTitle>{issue.field} · {issue.status}</AlertTitle>
+                  <Typography variant="body2">{issue.reason}</Typography>
+                  {issue.recommendation && <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Recommendation:</strong> {issue.recommendation}</Typography>}
+                  {issue.ruleReference && <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>{issue.ruleReference}</Typography>}
+                </Alert>
+              ))}
+              {scan.aiExplanation.recommendations?.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>Recommendations</Typography>
+                  {scan.aiExplanation.recommendations.map((recommendation, index) => <Typography key={index} variant="body2">• {recommendation}</Typography>)}
+                </Box>
+              )}
+              <Typography variant="body2" color="text.secondary"><strong>Inspector note:</strong> {scan.aiExplanation.inspectorNote}</Typography>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">No AI explanation is available for this scan. Review the extracted fields and rule results above.</Typography>
+          )}
         </AccordionDetails>
       </Accordion>
 

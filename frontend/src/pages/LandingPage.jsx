@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToastContext } from '../App';
 import { runDemo } from '../services/api';
@@ -46,16 +46,19 @@ const DEMO_PRODUCTS = [
 export default function LandingPage() {
   const navigate = useNavigate();
   const toast = useToastContext();
+  const [visibleSections, setVisibleSections] = useState(new Set());
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => entries.forEach(entry => {
-        if (entry.isIntersecting) entry.target.style.opacity = '1';
-        if (entry.isIntersecting) entry.target.style.transform = 'translateY(0)';
+        if (entry.isIntersecting) {
+          setVisibleSections(previous => new Set(previous).add(entry.target.dataset.section));
+          observer.unobserve(entry.target);
+        }
       }),
       { threshold: 0.1 }
     );
-    document.querySelectorAll('.fade-section').forEach(el => observer.observe(el));
+    document.querySelectorAll('[data-section]').forEach(el => observer.observe(el));
     return () => observer.disconnect();
   }, []);
 
@@ -99,10 +102,10 @@ export default function LandingPage() {
       </Box>
 
       {/* Process */}
-      <Container maxWidth="md" sx={{ py: 8 }} className="fade-section" style={sectionFade}>
-        <Typography variant="h4" align="center" gutterBottom>How It Works</Typography>
-        <Typography variant="subtitle1" align="center" sx={{ mb: 5 }}>Four simple steps to check label compliance</Typography>
-        <Stepper activeStep={-1} alternativeLabel sx={{ '.MuiStepConnector-line': { borderColor: 'primary.main' } }}>
+      <Container maxWidth="md" sx={{ py: 8, ...sectionFade, opacity: visibleSections.has('process') ? 1 : 0, transform: visibleSections.has('process') ? 'translateY(0)' : 'translateY(24px)' }} data-section="process">
+        <Typography variant="h4" align="center" gutterBottom sx={{ opacity: 0, transform: 'translateY(18px)', transition: 'opacity 0.55s ease, transform 0.55s ease', ...(visibleSections.has('process') && { opacity: 1, transform: 'translateY(0)' }) }}>How It Works</Typography>
+        <Typography variant="subtitle1" align="center" sx={{ mb: 5, opacity: 0, transform: 'translateY(18px)', transition: 'opacity 0.55s ease 0.12s, transform 0.55s ease 0.12s', ...(visibleSections.has('process') && { opacity: 1, transform: 'translateY(0)' }) }}>Four simple steps to check label compliance</Typography>
+        <Stepper activeStep={-1} alternativeLabel sx={{ opacity: 0, transform: 'translateY(18px)', transition: 'opacity 0.65s ease 0.24s, transform 0.65s ease 0.24s', ...(visibleSections.has('process') && { opacity: 1, transform: 'translateY(0)' }), '.MuiStepConnector-line': { borderColor: 'primary.main' } }}>
           {PROCESS_STEPS.map(label => (
             <Step key={label} completed={false}>
               <StepLabel>{label}</StepLabel>
