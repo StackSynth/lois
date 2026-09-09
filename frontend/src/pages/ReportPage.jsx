@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
 import { getScan } from '../services/api';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
@@ -27,6 +28,7 @@ import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PrintIcon from '@mui/icons-material/Print';
+import DownloadIcon from '@mui/icons-material/Download';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -72,6 +74,159 @@ function ScoreCircle({ score, size = 160 }) {
   );
 }
 
+function pdfSafe(value) {
+  return String(value ?? 'Not provided').replace(/[^\x00-\x7F]/g, '?');
+}
+
+function createCompliancePdf(scan) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 16;
+  const contentWidth = pageWidth - margin * 2;
+  let cursor = 20;
+
+  const statusLabel = scan.overallStatus === 'COMPLIANT'
+    ? 'COMPLIANT'
+    : scan.overallStatus === 'NON_COMPLIANT' ? 'NON-COMPLIANT' : 'NEEDS REVIEW';
+  const generatedAt = new Date();
+  const scanDate = new Date(scan.timestamp);
+  const fileDate = generatedAt.toISOString().slice(0, 10);
+  const safeProductName = pdfSafe(scan.productName).replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '') || 'Product';
+  const summary = scan.summary || {};
+  const rules = scan.ruleResults || [];
+  const fields = scan.extractedFields || [];
+  const issues = rules.filter(rule => ['MISSING', 'INVALID', 'LOW_CONFIDENCE', 'REVIEW_REQUIRED'].includes(rule.status));
+  const passed = rules.filter(rule => rule.status === 'COMPLIANT').length;
+  const failed = rules.filter(rule => ['MISSING', 'INVALID'].includes(rule.status)).length;
+  const review = rules.filter(rule => ['LOW_CONFIDENCE', 'REVIEW_REQUIRED'].includes(rule.status)).length;
+
+  const ensureSpace = (height = 8) => {
+    if (cursor + height > pageHeight - 16) {
+      doc.addPage();
+      cursor = 18;
+    }
+  };
+
+  const write = (text, options = {}) => {
+    const { size = 9, color = [35, 50, 65], bold = false, gap = 4 } = options;
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(pdfSafe(text), contentWidth);
+    ensureSpace(lines.length * (size * 0.45) + gap);
+    doc.text(lines, margin, cursor);
+    cursor += lines.length * (size * 0.45) + gap;
+  };
+
+  const sectionTitle = (title) => {
+    ensureSpace(14);
+    cursor += 3;
+    doc.setFillColor(18, 48, 74);
+    doc.rect(margin, cursor - 5, contentWidth, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(title, margin + 3, cursor + 0.5);
+    cursor += 10;
+  };
+
+  const row = (label, value, color = [35, 50, 65]) => {
+    ensureSpace(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(82, 103, 121);
+    doc.text(pdfSafe(label), margin, cursor);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(pdfSafe(value), contentWidth - 46);
+    doc.text(lines, margin + 46, cursor);
+    cursor += Math.max(5, lines.length * 4.2) + 2;
+  };
+
+  doc.setFillColor(18, 48, 74);
+  doc.rect(0, 0, pageWidth, 38, 'F');
+  doc.setFillColor(125, 211, 199);
+  doc.roundedRect(margin, 9, 16, 16, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(18, 48, 74);
+  doc.text('J', margin + 5.3, 20.2);
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.text('JARVIS', margin + 21, 16);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(207, 232, 229);
+  doc.text('AI-assisted packaged commodities compliance', margin + 21, 22);
+
+  cursor = 50;
+  write('Legal Metrology Compliance Report', { size: 18, color: [18, 48, 74], bold: true, gap: 6 });
+  write(scan.productName, { size: 13, color: [22, 143, 138], bold: true, gap: 7 });
+  row('Report status', statusLabel, statusLabel === 'COMPLIANT' ? [22, 130, 75] : statusLabel === 'NON-COMPLIANT' ? [185, 28, 28] : [180, 105, 0]);
+  row('Compliance score', `${scan.complianceScore ?? 0} / 100`);
+  row('Scan date', scanDate.toLocaleString('en-IN'));
+  row('Generated', generatedAt.toLocaleString('en-IN'));
+
+  sectionTitle('Compliance summary');
+  row('Declarations checked', rules.length || summary.compliant + summary.missing + summary.invalid + summary.review + summary.notApplicable);
+  row('Passed declarations', passed || summary.compliant);
+  row('Failed declarations', failed || (summary.missing || 0) + (summary.invalid || 0));
+  row('Manual review items', review || summary.review);
+  row('OCR confidence', `${Number(scan.ocrResult?.confidence || 0).toFixed(1)}%`);
+
+  sectionTitle('Detailed field-level analysis');
+  fields.forEach(field => {
+    const status = field.status === 'found' ? 'PASS' : field.status === 'low_confidence' ? 'REVIEW' : 'MISSING';
+    write(`${pdfSafe(field.label || field.field)}  |  ${status}  |  Confidence: ${field.confidence ?? 0}%`, { size: 9, bold: true, color: status === 'PASS' ? [22, 130, 75] : status === 'MISSING' ? [185, 28, 28] : [180, 105, 0], gap: 2 });
+    write(`Extracted value: ${field.value || 'Not detected'}`, { size: 8.5, color: [82, 103, 121], gap: 4 });
+  });
+
+  sectionTitle('Missing and invalid declarations');
+  if (issues.length === 0) {
+    write('No missing, invalid, or manual-review declarations were detected.', { size: 9, color: [22, 130, 75], gap: 5 });
+  } else {
+    issues.forEach(rule => {
+      write(`${rule.description}  |  ${rule.status}`, { size: 9, bold: true, color: [185, 28, 28], gap: 2 });
+      write(`Rule reference: ${rule.reference || 'Configured Legal Metrology rule set'}`, { size: 8.5, color: [82, 103, 121], gap: 2 });
+      write(`Recommendation: ${rule.explanation?.suggestion || 'Review the declaration and update the package label where required.'}`, { size: 8.5, gap: 5 });
+    });
+  }
+
+  sectionTitle('AI-assisted explanation and recommendations');
+  if (scan.aiExplanation) {
+    write(`Assessment: ${scan.aiExplanation.overallAssessment || 'REVIEW'}`, { size: 9, bold: true, gap: 3 });
+    write(scan.aiExplanation.summary || scan.aiExplanation.userExplanation || 'No summary provided.', { size: 9, gap: 4 });
+    if (scan.aiExplanation.userExplanation && scan.aiExplanation.userExplanation !== scan.aiExplanation.summary) {
+      write(scan.aiExplanation.userExplanation, { size: 9, gap: 4 });
+    }
+    (scan.aiExplanation.issues || []).forEach(issue => {
+      write(`${issue.field || 'Declaration'}: ${issue.reason || issue.status || 'Review required'}`, { size: 8.5, gap: 2 });
+      if (issue.recommendation) write(`Recommendation: ${issue.recommendation}`, { size: 8.5, color: [82, 103, 121], gap: 4 });
+    });
+    (scan.aiExplanation.recommendations || []).forEach(recommendation => write(`- ${recommendation}`, { size: 8.5, gap: 3 }));
+  } else {
+    write('No AI-assisted explanation is available. Review the field-level results and rule findings.', { size: 9, gap: 5 });
+  }
+
+  sectionTitle('Disclaimer');
+  write('This report is generated by an AI-assisted analysis system and is intended to support review by manufacturers, compliance teams, and inspectors. Automated analysis should be manually verified by a qualified professional against the applicable Legal Metrology requirements.', { size: 8.5, color: [82, 103, 121], gap: 6 });
+
+  const pageCount = doc.getNumberOfPages();
+  for (let page = 1; page <= pageCount; page += 1) {
+    doc.setPage(page);
+    doc.setDrawColor(220, 226, 230);
+    doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(110, 125, 138);
+    doc.text('JARVIS | Legal Metrology Compliance Report', margin, pageHeight - 6);
+    doc.text(`Page ${page} of ${pageCount}`, pageWidth - margin - 22, pageHeight - 6);
+  }
+
+  doc.save(`Jarvis_Compliance_Report_${safeProductName}_${fileDate}.pdf`);
+}
+
 export default function ReportPage() {
   const { scanId } = useParams();
   const location = useLocation();
@@ -80,6 +235,7 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(!navigationScan);
   const [error, setError] = useState(null);
   const [expandedRules, setExpandedRules] = useState(new Set());
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   useEffect(() => {
     if (navigationScan) {
@@ -134,6 +290,19 @@ export default function ReportPage() {
       else next.add(ruleId);
       return next;
     });
+  };
+
+  const handleDownloadPdf = () => {
+    setIsGeneratingPdf(true);
+    window.setTimeout(() => {
+      try {
+        createCompliancePdf(scan);
+      } catch (pdfError) {
+        console.error('Failed to generate compliance PDF:', pdfError);
+      } finally {
+        setIsGeneratingPdf(false);
+      }
+    }, 0);
   };
 
   if (loading) {
@@ -191,6 +360,9 @@ export default function ReportPage() {
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button variant="outlined" startIcon={<QrCodeScannerIcon />} component={Link} to="/scan">Scan Another</Button>
+          <Button variant="contained" startIcon={isGeneratingPdf ? <CircularProgress size={18} color="inherit" /> : <DownloadIcon />} onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
+            {isGeneratingPdf ? 'Generating report...' : 'Download PDF'}
+          </Button>
           <Button variant="outlined" startIcon={<PrintIcon />} onClick={() => window.print()}>Print</Button>
         </Box>
       </Box>
