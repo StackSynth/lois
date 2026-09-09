@@ -105,12 +105,8 @@ export function ProblemSection() {
   </Container></Box>;
 }
 
-export function WorkflowSection() {
-  const steps = [['01', 'Capture label', 'Take a photo or upload an image of any packaged product label.', <CameraAltOutlinedIcon />], ['02', 'AI extracts information', 'OCR and AI detect important declarations and product information.', <AutoAwesomeRoundedIcon />], ['03', 'Validate against LMR 2011', 'The extracted information is checked against Legal Metrology rules.', <GavelOutlinedIcon />], ['04', 'Get compliance report', 'Receive a detailed report highlighting missing and suspicious declarations.', <FactCheckOutlinedIcon />]];
-  return <Box id="how-it-works" sx={{ ...sectionSx, bgcolor: '#f8fafc' }}><Container maxWidth="xl"><SectionHeading eyebrow="How it works" title="One scan. Complete compliance analysis." copy="Jarvis turns a label image into a clear, reviewable compliance decision in four connected steps." align="center" />
-    <Grid container spacing={2}>{steps.map(([number, title, copy, icon], index) => <Grid item xs={12} sm={6} md={3} key={number}><Box sx={{ position: 'relative', height: '100%' }}><Paper sx={{ ...panelSx, p: 3, height: '100%', boxShadow: 'none', bgcolor: '#fff' }}><Typography sx={{ color: '#2563eb', fontSize: '0.75rem', fontWeight: 900 }}>{number}</Typography><Box sx={{ mt: 3, color: '#16324f' }}>{icon}</Box><Typography variant="h6" sx={{ mt: 2, color: '#0f172a', fontWeight: 800 }}>{title}</Typography><Typography variant="body2" sx={{ mt: 1, color: '#64748b', lineHeight: 1.7 }}>{copy}</Typography></Paper>{index < 3 && <ArrowForwardRoundedIcon sx={{ display: { xs: 'none', md: 'block' }, position: 'absolute', right: -18, top: '50%', color: '#93c5fd', zIndex: 2 }} />}</Box></Grid>)}</Grid>
-  </Container></Box>;
-}
+export { WorkflowSection } from './WorkflowSection';
+
 
 export function FeaturesSection() {
   const features = [['AI-powered OCR', 'Automatically extracts product information from packaging labels.', <AutoAwesomeRoundedIcon />], ['Rule-based validation', 'Maps extracted fields against the Legal Metrology Rules, 2011.', <GavelOutlinedIcon />], ['Confidence scoring', 'Identifies uncertain results and sends low-confidence scans for review.', <InsightsOutlinedIcon />], ['AI-assisted analysis', 'Explains missing or invalid declarations in plain language.', <FactCheckOutlinedIcon />], ['Multilingual support', 'Designed for labels containing multiple regional languages.', <LanguageOutlinedIcon />], ['Compliance reports', 'Generate downloadable reports for auditing and documentation.', <ArrowUpwardRoundedIcon />], ['Inspector console', 'Review scan history, filter outcomes, and manage follow-up work.', <TuneOutlinedIcon />], ['Digital audit trail', 'Maintain searchable compliance history across products and manufacturers.', <SecurityOutlinedIcon />]];
