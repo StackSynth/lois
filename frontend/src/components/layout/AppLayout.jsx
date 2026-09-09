@@ -41,6 +41,7 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isLanding = location.pathname === '/';
   const [drawerOpen, setDrawerOpen] = useState(false);
   const currentToast = toasts?.[0];
 
@@ -71,7 +72,7 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1, bgcolor: 'background.paper', color: 'text.primary', border: 0, borderBottom: '1px solid', borderColor: 'divider', boxShadow: '0 2px 12px rgba(16,37,54,0.04)' }}>
+      {!isLanding && <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1, bgcolor: 'background.paper', color: 'text.primary', border: 0, borderBottom: '1px solid', borderColor: 'divider', boxShadow: '0 2px 12px rgba(16,37,54,0.04)' }}>
         <Toolbar sx={{ gap: 2, minHeight: '68px !important', px: { xs: 2, md: 3 } }}>
           {isMobile && <IconButton color="inherit" onClick={() => setDrawerOpen(true)} edge="start"><MenuIcon /></IconButton>}
           <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', gap: 1.2, textDecoration: 'none', color: 'inherit', mr: { xs: 0, md: 3 } }}>
@@ -85,9 +86,9 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
           <Tooltip title="Help"><IconButton size="small" color="inherit"><HelpOutlineIcon fontSize="small" /></IconButton></Tooltip>
           {!isMobile && <Button size="small" onClick={() => navigate('/signin')} startIcon={<AccountCircleOutlinedIcon />} sx={{ ml: 0.5, px: 1.5, py: 0.65, color: 'text.primary' }}>Inspector</Button>}
         </Toolbar>
-      </AppBar>
+      </AppBar>}
 
-      {!isMobile && <Drawer variant="permanent" sx={{ width: 248, flexShrink: 0, '& .MuiDrawer-paper': { width: 248, boxSizing: 'border-box', top: 68, height: 'calc(100% - 68px)', px: 1.5, py: 2 } }}>
+      {!isLanding && !isMobile && <Drawer variant="permanent" sx={{ width: 248, flexShrink: 0, '& .MuiDrawer-paper': { width: 248, boxSizing: 'border-box', top: 68, height: 'calc(100% - 68px)', px: 1.5, py: 2 } }}>
         <Typography variant="overline" color="text.secondary" sx={{ px: 1.5, mb: 1 }}>Workspace</Typography>
         <List sx={{ p: 0 }}>{NAV_ITEMS.map(nav)}</List>
         <Divider sx={{ my: 2 }} />
@@ -97,14 +98,14 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
         </Box>
       </Drawer>}
 
-      <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)} sx={{ '& .MuiDrawer-paper': { width: 280, pt: '68px', px: 1.5 } }}>
+      {!isLanding && <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)} sx={{ '& .MuiDrawer-paper': { width: 280, pt: '68px', px: 1.5 } }}>
         <Typography variant="overline" color="text.secondary" sx={{ px: 1.5, mb: 1 }}>Workspace</Typography>
         <List sx={{ p: 0 }}>{NAV_ITEMS.map(nav)}</List>
         <Divider sx={{ my: 2 }} />
         <Button component={Link} to="/scan" variant="contained" startIcon={<QrCodeScannerOutlinedIcon />} onClick={() => setDrawerOpen(false)} sx={{ mx: 1 }}>Start new scan</Button>
-      </Drawer>
+      </Drawer>}
 
-      <Box component="main" sx={{ flex: 1, minWidth: 0, pt: '68px', position: 'relative', zIndex: 1 }}>
+      <Box component="main" sx={{ flex: 1, minWidth: 0, pt: isLanding ? 0 : '68px', position: 'relative', zIndex: 1 }}>
         {children}
       </Box>
 
