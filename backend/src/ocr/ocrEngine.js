@@ -8,8 +8,11 @@ import os from 'os';
 import sharp from 'sharp';
 import Tesseract from 'tesseract.js';
 
-const OCR_TIMEOUT_MS = Number(process.env.OCR_TIMEOUT_MS || 90000);
-const GEMINI_OCR_TIMEOUT_MS = Number(process.env.GEMINI_OCR_TIMEOUT_MS || 25000);
+// Keep a scan interactive. A provider that has not responded within these
+// bounds is unlikely to be useful to the person waiting at the scanner.
+const OCR_TIMEOUT_MS = Number(process.env.OCR_TIMEOUT_MS || 30000);
+const GEMINI_OCR_TIMEOUT_MS = Number(process.env.GEMINI_OCR_TIMEOUT_MS || 10000);
+const OCR_WARMUP_TIMEOUT_MS = Number(process.env.OCR_WARMUP_TIMEOUT_MS || 8000);
 const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MAX_OCR_EDGE = Number(process.env.OCR_MAX_EDGE || 1600);
@@ -172,7 +175,7 @@ Do not summarize, translate, or invent missing text.`
 async function performTesseractOCR(imageSource) {
   let worker;
   try {
-    worker = await withTimeout(warmOCR(), Math.min(OCR_TIMEOUT_MS, 30000), 'OCR warm-up');
+    worker = await withTimeout(warmOCR(), Math.min(OCR_TIMEOUT_MS, OCR_WARMUP_TIMEOUT_MS), 'OCR warm-up');
   } catch {
     worker = null;
   }
