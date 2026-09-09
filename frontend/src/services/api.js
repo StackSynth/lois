@@ -5,9 +5,8 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL || ''}/api`,
-  // The server applies short OCR/AI budgets and returns a local explanation
-  // when Gemini is slow. Leave a small margin for upload and network time.
-  timeout: 65000,
+  // Scan can include Gemini Vision OCR (~35s) + explanation; keep margin for upload.
+  timeout: 90000,
 });
 
 // Response interceptor for error handling
