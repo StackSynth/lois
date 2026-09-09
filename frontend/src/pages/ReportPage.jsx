@@ -33,7 +33,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ScienceIcon from '@mui/icons-material/Science';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlineOutlined';
 
 const STATUS_CHIP = {
   COMPLIANT: { label: 'Compliant', color: 'success', icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> },

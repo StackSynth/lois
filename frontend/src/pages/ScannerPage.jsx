@@ -8,6 +8,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
@@ -23,6 +24,9 @@ import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
 import InfoIcon from '@mui/icons-material/Info';
 import ImageIcon from '@mui/icons-material/Image';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 
 export default function ScannerPage() {
   const navigate = useNavigate();
@@ -212,13 +216,15 @@ export default function ScannerPage() {
   const chipColor = { ok: 'success', warning: 'warning', error: 'error', info: 'info' };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Typography variant="h4" gutterBottom>Scan Product Label</Typography>
-        <Typography variant="subtitle1">
-          Upload or capture a packaged commodity label to check its compliance.
-        </Typography>
+    <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, md: 4 } }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="overline" color="secondary.main">New compliance review</Typography>
+        <Typography variant="h4" sx={{ mt: 0.5 }} gutterBottom>Scan product label</Typography>
+        <Typography variant="subtitle1" sx={{ maxWidth: 640 }}>Upload or capture a packaged commodity label. Jarvis will extract declarations, evaluate the rules and prepare an audit-ready report.</Typography>
       </Box>
+
+      <Grid container spacing={3} alignItems="flex-start">
+        <Grid item xs={12} md={8}>
 
       {/* Upload Zone */}
       {!preview && !cameraActive && (
@@ -231,7 +237,7 @@ export default function ScannerPage() {
               onDragLeave={handleDragLeave}
               onClick={() => fileInputRef.current?.click()}
               sx={{
-                p: 6, textAlign: 'center', cursor: 'pointer',
+                p: { xs: 4, md: 7 }, textAlign: 'center', cursor: 'pointer',
                 border: '2px dashed',
                 borderColor: isDragging ? 'primary.main' : 'divider',
                 bgcolor: isDragging ? 'action.hover' : 'transparent',
@@ -241,7 +247,7 @@ export default function ScannerPage() {
               }}
             >
               <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => handleFile(e.target.files[0])} style={{ display: 'none' }} />
-              <CloudUploadIcon sx={{ fontSize: 56, color: 'primary.main', mb: 2 }} />
+              <Box sx={{ width: 64, height: 64, display: 'grid', placeItems: 'center', mx: 'auto', mb: 2, borderRadius: 2, bgcolor: 'secondary.light', color: 'secondary.dark' }}><CloudUploadIcon sx={{ fontSize: 34 }} /></Box>
               <Typography variant="h6" gutterBottom>
                 {isDragging ? 'Drop your image here' : 'Upload product label'}
               </Typography>
@@ -249,7 +255,7 @@ export default function ScannerPage() {
                 Drag and drop an image here, or click to browse
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                JPEG, PNG, WebP • Max 20MB
+                JPG, PNG or WEBP · Maximum 20MB
               </Typography>
             </Paper>
             <Divider sx={{ mx: 2 }}><Typography variant="caption" color="text.secondary">OR</Typography></Divider>
@@ -325,6 +331,24 @@ export default function ScannerPage() {
       )}
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card sx={{ mb: 2 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}><AutoAwesomeIcon color="secondary" /><Typography variant="subtitle1" fontWeight={800}>What Jarvis checks</Typography></Box>
+              {[
+                ['Mandatory declarations', 'Product name, quantity, MRP and manufacturer details'],
+                ['OCR confidence', 'Low-confidence fields are flagged for manual review'],
+                ['Rules validation', 'Declarations are checked against configured Legal Metrology rules'],
+              ].map(([title, copy]) => <Box key={title} sx={{ display: 'flex', gap: 1.5, mb: 2.2 }}><FactCheckOutlinedIcon sx={{ color: 'secondary.main', mt: 0.2 }} fontSize="small" /><Box><Typography variant="body2" fontWeight={700}>{title}</Typography><Typography variant="caption" color="text.secondary">{copy}</Typography></Box></Box>)}
+            </CardContent>
+          </Card>
+          <Alert icon={<VerifiedUserOutlinedIcon />} severity="info" sx={{ alignItems: 'flex-start' }}>
+            <Typography variant="body2" fontWeight={700}>Built for review, not certification</Typography>
+            <Typography variant="caption">Use the report as a structured aid for inspectors and compliance teams.</Typography>
+          </Alert>
+        </Grid>
+      </Grid>
     </Container>
   );
 }
