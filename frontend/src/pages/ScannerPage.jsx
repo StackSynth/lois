@@ -190,13 +190,14 @@ export default function ScannerPage() {
 
     try {
       const result = await scanImage(selectedFile);
+      const scanId = result?.data?.id;
+      if (!scanId) {
+        throw new Error('Scan completed without a report ID. Please try again.');
+      }
       toast.success('AI analysis ready');
-      navigate(`/report/${result.data.id}`, { state: { focusAi: true } });
+      navigate(`/report/${scanId}`, { state: { focusAi: true } });
     } catch (err) {
-      const isOcrServiceError = /couldn't process this label|ocr processing failed|gemini vision|ocr timed out|tesseract/i.test(err.message || '');
-      toast.error(isOcrServiceError
-        ? "We couldn't process this label right now. Please try again with a clear image."
-        : 'Analysis failed: ' + err.message);
+      toast.error(err.message || 'Scan failed. Please try again.');
     } finally {
       clearInterval(stageTimer);
       setAnalyzeStage('');

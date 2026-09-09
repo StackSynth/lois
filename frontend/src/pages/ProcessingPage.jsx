@@ -12,6 +12,7 @@ import StepLabel from '@mui/material/StepLabel';
 import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import Alert from '@mui/material/Alert';
 
 const STAGES = [
   { label: 'Image received', icon: '📥' },
@@ -27,6 +28,7 @@ export default function ProcessingPage() {
   const navigate = useNavigate();
   const [activeStage, setActiveStage] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const stageInterval = setInterval(() => {
@@ -60,11 +62,13 @@ export default function ProcessingPage() {
       const checkResult = async () => {
         try {
           const result = await getScan(scanId);
-          if (result.data) {
-            setTimeout(() => navigate(`/report/${scanId}`), 500);
+          if (result?.data?.id === scanId) {
+            setTimeout(() => navigate(`/report/${result.data.id}`), 500);
+          } else {
+            setError('The scan completed without a matching report. Please start a new scan.');
           }
-        } catch {
-          setTimeout(() => navigate(`/report/${scanId}`), 500);
+        } catch (err) {
+          setError(err.message || 'The scan result could not be loaded. Please try again.');
         }
       };
       checkResult();
@@ -83,6 +87,8 @@ export default function ProcessingPage() {
               Running compliance checks against Legal Metrology rules...
             </Typography>
           </Box>
+
+          {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
           {/* Stepper */}
           <Stepper activeStep={activeStage} orientation="vertical" sx={{ mb: 4 }}>
