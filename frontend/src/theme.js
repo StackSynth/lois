@@ -40,7 +40,7 @@ const getTheme = (mode) => createTheme({
     h4: { fontWeight: 600 },
     h5: { fontWeight: 600 },
     h6: { fontWeight: 600 },
-    subtitle1: { fontWeight: 500, color: mode === 'light' ? '#64748b' : '#94a3b8' },
+    subtitle1: { fontWeight: 500, color: mode === 'light' ? '#526779' : '#cbd5e1' },
     subtitle2: { fontWeight: 500, fontSize: '0.8rem' },
     button: { fontWeight: 600, textTransform: 'none' },
     overline: { fontWeight: 600, letterSpacing: '0.08em' },
@@ -68,7 +68,7 @@ const getTheme = (mode) => createTheme({
         root: {
           backdropFilter: 'blur(12px)',
           borderBottom: `1px solid ${mode === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'}`,
-          background: mode === 'light' ? 'rgba(245,245,243,0.9)' : 'rgba(11,11,11,0.9)',
+          background: mode === 'light' ? 'rgba(255,255,255,0.96)' : 'rgba(11,11,11,0.9)',
         },
       },
     },
@@ -176,6 +176,13 @@ const getTheme = (mode) => createTheme({
         paper: {
           background: mode === 'light' ? '#ffffff' : '#121826',
           borderRight: `1px solid ${mode === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(148,163,184,0.18)'}`,
+          color: mode === 'light' ? '#102536' : '#f1f5f9',
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        root: {
           color: mode === 'light' ? '#102536' : '#f1f5f9',
         },
       },

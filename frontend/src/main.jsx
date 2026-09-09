@@ -10,7 +10,7 @@ const ColorModeContext = createContext({ toggleColorMode: () => {} });
 export const useColorMode = () => useContext(ColorModeContext);
 
 function Root() {
-  const [mode, setMode] = useState('dark');
+  const [mode, setMode] = useState('light');
 
   const colorMode = useMemo(() => ({
     toggleColorMode: () => setMode(prev => prev === 'light' ? 'dark' : 'light'),
