@@ -13,7 +13,9 @@ const __dirname = dirname(__filename);
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = join(__dirname, '..', '..', 'uploads');
+    const uploadDir = process.env.VERCEL
+      ? '/tmp'
+      : join(__dirname, '..', '..', 'uploads');
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
