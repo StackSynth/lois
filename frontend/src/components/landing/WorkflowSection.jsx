@@ -27,7 +27,7 @@ export function WorkflowSection() {
       id: 'step-01',
       number: '01',
       phase: 'INGESTION',
-      title: 'Upload Product Label',
+      title: 'Capture Product Label',
       icon: <CameraAltOutlinedIcon sx={{ fontSize: 26 }} />,
       description: 'Upload or capture an image of a packaged product label for analysis.',
       highlight: false,

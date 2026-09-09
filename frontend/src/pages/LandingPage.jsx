@@ -7,11 +7,12 @@ import {
   Hero,
   ProblemSection,
   WorkflowSection,
-  FeaturesSection,
-  DemoSection,
   AiSection,
-  TechnologySection,
   ImpactSection,
+  FeaturesSection,
+  UseCasesSection,
+  TechnologySection,
+  DemoSection,
   FinalCta,
   LandingFooter,
 } from '../components/landing/LandingSections';
@@ -39,13 +40,14 @@ export default function LandingPage() {
   return (
     <>
       <LandingNav />
-      <Hero />
+      <Hero onDemo={handleDemo} />
       <ProblemSection />
       <WorkflowSection />
-      <FeaturesSection />
       <AiSection />
+      <ImpactSection onDemo={handleDemo} />
+      <FeaturesSection />
+      <UseCasesSection />
       <TechnologySection />
-      <ImpactSection />
       <DemoSection onDemo={handleDemo} />
       <FinalCta />
       <LandingFooter />
