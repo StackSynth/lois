@@ -5,6 +5,7 @@ import { runDemo } from '../services/api';
 import {
   LandingNav,
   Hero,
+  TrustBar,
   ProblemSection,
   WorkflowSection,
   AiSection,
@@ -41,6 +42,7 @@ export default function LandingPage() {
     <>
       <LandingNav />
       <Hero onDemo={handleDemo} />
+      <TrustBar />
       <ProblemSection />
       <WorkflowSection />
       <AiSection />
