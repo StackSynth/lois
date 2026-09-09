@@ -42,6 +42,7 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isLanding = location.pathname === '/';
+  const isDashboard = location.pathname === '/dashboard';
   const [drawerOpen, setDrawerOpen] = useState(false);
   const currentToast = toasts?.[0];
 
@@ -56,13 +57,14 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
         borderRadius: 1.5,
         mb: 0.5,
         py: 1.1,
-        '&:hover': { bgcolor: 'grey.200' },
+        color: isDashboard ? '#e5e5e5' : undefined,
+        '&:hover': { bgcolor: isDashboard ? 'rgba(255,69,0,0.12)' : 'grey.200' },
         '&.Mui-selected': {
-          bgcolor: 'primary.main',
-          color: 'primary.contrastText',
-          '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+          bgcolor: isDashboard ? '#ff4500' : 'primary.main',
+          color: isDashboard ? '#000000' : 'primary.contrastText',
+          '& .MuiListItemIcon-root': { color: isDashboard ? '#000000' : 'primary.contrastText' },
         },
-        '&.Mui-selected:hover': { bgcolor: 'grey.500', color: 'primary.contrastText' },
+        '&.Mui-selected:hover': { bgcolor: isDashboard ? '#ff6b1a' : 'grey.500', color: isDashboard ? '#000000' : 'primary.contrastText' },
       }}
     >
       <ListItemIcon sx={{ minWidth: 38, color: 'text.secondary' }}>{item.icon}</ListItemIcon>
@@ -71,30 +73,30 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      {!isLanding && <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1, bgcolor: 'rgba(255,255,255,0.76)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', color: 'text.primary', border: 0, borderBottom: '1px solid', borderColor: 'rgba(226,232,240,0.8)', boxShadow: '0 4px 20px rgba(16,37,54,0.03)' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: isDashboard ? '#000000' : 'background.default' }}>
+      {!isLanding && <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1, bgcolor: isDashboard ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.76)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', color: isDashboard ? '#ffffff' : 'text.primary', border: 0, borderBottom: '1px solid', borderColor: isDashboard ? 'rgba(255,255,255,0.12)' : 'rgba(226,232,240,0.8)', boxShadow: isDashboard ? 'none' : '0 4px 20px rgba(16,37,54,0.03)' }}>
         <Toolbar sx={{ gap: 2, minHeight: '68px !important', px: { xs: 2, md: 3 } }}>
           {isMobile && <IconButton color="inherit" onClick={() => setDrawerOpen(true)} edge="start"><MenuIcon /></IconButton>}
           <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', gap: 1.2, textDecoration: 'none', color: 'inherit', mr: { xs: 0, md: 3 } }}>
-            <Typography variant="h6" sx={{ fontWeight: 900, width: 34, height: 34, borderRadius: 1.5, bgcolor: 'primary.main', color: 'primary.contrastText', display: 'grid', placeItems: 'center', fontSize: '1.05rem' }}>J</Typography>
-            {!isMobile && <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, letterSpacing: '0.12em' }}>JARVIS</Typography>}
+            <Typography variant="h6" sx={{ fontWeight: 900, width: 34, height: 34, borderRadius: 1.5, bgcolor: isDashboard ? '#ff4500' : 'primary.main', color: '#000000', display: 'grid', placeItems: 'center', fontSize: '1.05rem' }}>J</Typography>
+            {!isMobile && <Typography variant="caption" sx={{ color: isDashboard ? '#ffffff' : 'text.primary', fontWeight: 800, letterSpacing: '0.12em' }}>JARVIS</Typography>}
           </Box>
-          {!isMobile && <Box sx={{ maxWidth: 360, flex: 1, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(8px)', border: '1px solid', borderColor: 'rgba(226,232,240,0.9)', borderRadius: 2, px: 1.5, py: 0.7 }}><SearchIcon fontSize="small" color="disabled" /><Typography variant="body2" color="text.secondary">Search scans, products or reports</Typography></Box>}
+          {!isMobile && <Box sx={{ maxWidth: 360, flex: 1, display: 'flex', alignItems: 'center', gap: 1, bgcolor: isDashboard ? '#111111' : 'rgba(255,255,255,0.6)', backdropFilter: 'blur(8px)', border: '1px solid', borderColor: isDashboard ? 'rgba(255,255,255,0.16)' : 'rgba(226,232,240,0.9)', borderRadius: 2, px: 1.5, py: 0.7 }}><SearchIcon fontSize="small" sx={{ color: isDashboard ? '#e5e5e5' : undefined }} /><Typography variant="body2" sx={{ color: isDashboard ? '#e5e5e5' : 'text.secondary' }}>Search scans, products or reports</Typography></Box>}
           <Box sx={{ flex: 1 }} />
-          <Tooltip title="System status"><Chip icon={<ShieldOutlinedIcon />} label="System online" size="small" color="success" variant="outlined" sx={{ display: { xs: 'none', sm: 'flex' }, bgcolor: 'rgba(22,163,74,0.06)', backdropFilter: 'blur(6px)' }} /></Tooltip>
+          <Tooltip title="System status"><Chip icon={<ShieldOutlinedIcon />} label="System online" size="small" variant="outlined" sx={{ display: { xs: 'none', sm: 'flex' }, color: isDashboard ? '#ff4500' : undefined, borderColor: isDashboard ? '#ff4500' : undefined, bgcolor: isDashboard ? 'rgba(255,69,0,.08)' : 'rgba(22,163,74,0.06)', backdropFilter: 'blur(6px)' }} /></Tooltip>
           <Tooltip title="Notifications"><IconButton size="small" color="inherit"><NotificationsNoneOutlinedIcon /></IconButton></Tooltip>
           <Tooltip title="Help"><IconButton size="small" color="inherit"><HelpOutlineIcon fontSize="small" /></IconButton></Tooltip>
           {!isMobile && <Button size="small" onClick={() => navigate('/signin')} startIcon={<AccountCircleOutlinedIcon />} sx={{ ml: 0.5, px: 1.5, py: 0.65, color: 'text.primary' }}>Inspector</Button>}
         </Toolbar>
       </AppBar>}
 
-      {!isLanding && !isMobile && <Drawer variant="permanent" sx={{ width: 248, flexShrink: 0, '& .MuiDrawer-paper': { width: 248, boxSizing: 'border-box', top: 68, height: 'calc(100% - 68px)', px: 1.5, py: 2, bgcolor: 'rgba(255,255,255,0.68)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderRight: '1px solid rgba(226,232,240,0.8)' } }}>
+      {!isLanding && !isMobile && <Drawer variant="permanent" sx={{ width: 248, flexShrink: 0, '& .MuiDrawer-paper': { width: 248, boxSizing: 'border-box', top: 68, height: 'calc(100% - 68px)', px: 1.5, py: 2, bgcolor: isDashboard ? '#0a0a0a' : 'rgba(255,255,255,0.68)', color: isDashboard ? '#ffffff' : undefined, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderRight: isDashboard ? '1px solid rgba(255,255,255,.12)' : '1px solid rgba(226,232,240,0.8)' } }}>
         <Typography variant="overline" color="text.secondary" sx={{ px: 1.5, mb: 1 }}>Workspace</Typography>
         <List sx={{ p: 0 }}>{NAV_ITEMS.map(nav)}</List>
         <Divider sx={{ my: 2 }} />
-        <Box sx={{ mt: 'auto', mx: 0.5, p: 2, bgcolor: 'rgba(22,143,138,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(22,143,138,0.18)', borderRadius: 2 }}>
-          <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.dark' }}>LEGAL METROLOGY</Typography>
-          <Typography variant="body2" sx={{ mt: 0.5, color: 'text.primary' }}>Rules engine ready for your next label review.</Typography>
+        <Box sx={{ mt: 'auto', mx: 0.5, p: 2, bgcolor: isDashboard ? '#111111' : 'rgba(22,143,138,0.1)', backdropFilter: 'blur(8px)', border: isDashboard ? '1px solid rgba(255,69,0,.4)' : '1px solid rgba(22,143,138,0.18)', borderRadius: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, color: isDashboard ? '#ff4500' : 'secondary.dark' }}>LEGAL METROLOGY</Typography>
+          <Typography variant="body2" sx={{ mt: 0.5, color: isDashboard ? '#e5e5e5' : 'text.primary' }}>Rules engine ready for your next label review.</Typography>
         </Box>
       </Drawer>}
 
