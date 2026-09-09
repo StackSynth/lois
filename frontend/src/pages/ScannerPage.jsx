@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToastContext } from '../App';
 import { scanImage } from '../services/api';
@@ -42,6 +42,23 @@ export default function ScannerPage() {
   const [analyzeStage, setAnalyzeStage] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [quality, setQuality] = useState(null);
+  const [cameraStream, setCameraStream] = useState(null);
+
+  const stopCamera = useCallback(() => {
+    cameraStream?.getTracks().forEach((track) => track.stop());
+    setCameraStream(null);
+  }, [cameraStream]);
+
+  useEffect(() => {
+    if (cameraActive && cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraActive, cameraStream]);
+
+  useEffect(() => () => {
+    cameraStream?.getTracks().forEach((track) => track.stop());
+  }, [cameraStream]);
 
   const checkImageQuality = useCallback((file) => {
     const img = new Image();
@@ -118,9 +135,7 @@ export default function ScannerPage() {
     setPreview(URL.createObjectURL(file));
     checkImageQuality(file);
     setCameraActive(false);
-    if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
-    }
+    stopCamera();
   }, [toast, checkImageQuality]);
 
   const handleDrop = useCallback((e) => {
@@ -138,14 +153,11 @@ export default function ScannerPage() {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
       });
+      setCameraStream(stream);
       setCameraActive(true);
       setSelectedFile(null);
       setPreview(null);
       setQuality(null);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
     } catch {
       toast.warning('Camera access denied. Please use file upload instead.');
     }
@@ -165,7 +177,7 @@ export default function ScannerPage() {
       handleFile(file);
     }, 'image/jpeg', 0.92);
 
-    video.srcObject.getTracks().forEach(t => t.stop());
+    stopCamera();
     setCameraActive(false);
   };
 
@@ -216,9 +228,7 @@ export default function ScannerPage() {
     setSelectedFile(null);
     setPreview(null);
     setQuality(null);
-    if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
-    }
+    stopCamera();
     setCameraActive(false);
   };
 
@@ -257,7 +267,7 @@ export default function ScannerPage() {
                 m: 2,
               }}
             >
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => handleFile(e.target.files[0])} style={{ display: 'none' }} />
+              <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleFile(e.target.files[0])} style={{ display: 'none' }} />
               <Box sx={{ width: 64, height: 64, display: 'grid', placeItems: 'center', mx: 'auto', mb: 2, borderRadius: 2, bgcolor: 'secondary.light', color: 'secondary.dark' }}><CloudUploadIcon sx={{ fontSize: 34 }} /></Box>
               <Typography variant="h6" gutterBottom>
                 {isDragging ? 'Drop your image here' : 'Upload product label'}
