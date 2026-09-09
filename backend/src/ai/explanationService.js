@@ -1,5 +1,6 @@
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 15000);
 
 const EMPTY_EXPLANATION = {
   overallAssessment: 'REVIEW',
@@ -52,16 +53,19 @@ export async function generateExplanation({ product, extractedFields, ruleResult
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return { ...EMPTY_EXPLANATION, summary: 'AI explanation is not configured. Review the extracted fields and rule results below.' };
 
+  let timeout;
   try {
+    const controller = new AbortController();
+    timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     const response = await fetch(`${API_URL}/${MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         contents: [{ parts: [{ text: buildPrompt({ product, extractedFields, ruleResults }) }] }],
         generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
       })
     });
-
     if (!response.ok) {
       const details = await response.text();
       throw new Error(`Gemini request failed (${response.status}): ${details.slice(0, 300)}`);
@@ -72,7 +76,12 @@ export async function generateExplanation({ product, extractedFields, ruleResult
     if (!text) throw new Error('Gemini returned an empty response');
     return normalizeExplanation(cleanJson(text));
   } catch (error) {
-    console.error('AI explanation unavailable:', error.message);
+    const message = error.name === 'AbortError'
+      ? `request timed out after ${REQUEST_TIMEOUT_MS}ms`
+      : error.message;
+    console.error('AI explanation unavailable:', message);
     return { ...EMPTY_EXPLANATION, summary: 'The AI explanation could not be generated. Review the extracted fields and rule results below.' };
+  } finally {
+    clearTimeout(timeout);
   }
 }

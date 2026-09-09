@@ -150,42 +150,53 @@ export function getScanById(req, res) {
 /**
  * POST /api/demo/:demoId — Run demo product pipeline (bypasses OCR)
  */
-export function runDemo(req, res) {
-  const { demoId } = req.params;
-  const demoProduct = demoProducts[demoId];
+export async function runDemo(req, res, next) {
+  try {
+    const { demoId } = req.params;
+    const demoProduct = demoProducts[demoId];
 
-  if (!demoProduct) {
-    return res.status(404).json({
-      error: { message: `Demo product "${demoId}" not found. Available: demo-a, demo-b, demo-c` }
+    if (!demoProduct) {
+      return res.status(404).json({
+        error: { message: `Demo product "${demoId}" not found. Available: demo-a, demo-b, demo-c` }
+      });
+    }
+
+    const scanId = `${demoId}-${Date.now()}`;
+
+    // Run rule engine on demo data
+    const { ruleResults, complianceScore, overallStatus, summary } = validateCompliance(
+      demoProduct.extractedFields,
+      demoProduct.category
+    );
+
+    const aiExplanation = await generateExplanation({
+      product: { name: demoProduct.name, category: demoProduct.category },
+      extractedFields: demoProduct.extractedFields,
+      ruleResults
     });
+
+    const scan = createScan({
+      id: scanId,
+      productName: demoProduct.name,
+      timestamp: new Date().toISOString(),
+      imageUrl: null,
+      ocrResult: {
+        text: demoProduct.ocrText,
+        confidence: 95
+      },
+      extractedFields: demoProduct.extractedFields,
+      ruleResults,
+      complianceScore,
+      overallStatus,
+      isDemo: true,
+      summary,
+      aiExplanation
+    });
+
+    scanStore.create(scan);
+
+    res.json({ success: true, data: scan });
+  } catch (error) {
+    next(error);
   }
-
-  const scanId = `${demoId}-${Date.now()}`;
-
-  // Run rule engine on demo data
-  const { ruleResults, complianceScore, overallStatus, summary } = validateCompliance(
-    demoProduct.extractedFields,
-    demoProduct.category
-  );
-
-  const scan = createScan({
-    id: scanId,
-    productName: demoProduct.name,
-    timestamp: new Date().toISOString(),
-    imageUrl: null,
-    ocrResult: {
-      text: demoProduct.ocrText,
-      confidence: 95
-    },
-    extractedFields: demoProduct.extractedFields,
-    ruleResults,
-    complianceScore,
-    overallStatus,
-    isDemo: true,
-    summary
-  });
-
-  scanStore.create(scan);
-
-  res.json({ success: true, data: scan });
 }
