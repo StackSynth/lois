@@ -26,7 +26,7 @@ export async function scanImage(req, res, next) {
 
     // Step 1: OCR (bounded — see OCR_TIMEOUT_MS)
     const ocrResult = await performOCR(req.file.path);
-    console.log(`[scan ${scanId}] OCR done in ${Date.now() - startedAt}ms`);
+    console.log(`[scan ${scanId}] OCR done in ${Date.now() - startedAt}ms (engine=${ocrResult.engine || 'unknown'})`);
 
     // Step 2: Extract fields
     const extractedFields = extractFields(ocrResult.text);

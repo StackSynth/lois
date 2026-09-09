@@ -324,7 +324,7 @@ export default function ScannerPage() {
           </Button>
           {isAnalyzing && (
             <Alert severity="info" icon={<InfoIcon />}>
-              {analyzeStage || 'Starting analysis…'} This can take up to about a minute on the first run.
+              {analyzeStage || 'Starting analysis…'} Reading the label with AI OCR first for faster results.
             </Alert>
           )}
         </Box>
