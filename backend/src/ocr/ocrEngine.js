@@ -6,7 +6,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import sharp from 'sharp';
-import Tesseract from 'tesseract.js';
 
 // Keep a scan interactive. A provider that has not responded within these
 // bounds is unlikely to be useful to the person waiting at the scanner.
@@ -15,11 +14,24 @@ const GEMINI_OCR_TIMEOUT_MS = Number(process.env.GEMINI_OCR_TIMEOUT_MS || 10000)
 const OCR_WARMUP_TIMEOUT_MS = Number(process.env.OCR_WARMUP_TIMEOUT_MS || 8000);
 const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const MAX_OCR_EDGE = Number(process.env.OCR_MAX_EDGE || 1600);
+const MAX_OCR_EDGE = Number(process.env.OCR_MAX_EDGE || 1200);
 const MAX_INLINE_BYTES = 3.5 * 1024 * 1024;
+// Vercel functions should use the external Gemini Vision request only. Local
+// Tesseract is CPU-heavy, suffers cold starts, and is unsuitable as a
+// serverless fallback. It remains available for local development.
+const SHOULD_USE_TESSERACT = process.env.OCR_FALLBACK_TESSERACT === 'true'
+  || (!process.env.VERCEL && process.env.OCR_FALLBACK_TESSERACT !== 'false');
 
 let sharedWorker = null;
 let workerReady = null;
+let tesseractModule = null;
+
+async function getTesseract() {
+  if (!tesseractModule) {
+    ({ default: tesseractModule } = await import('tesseract.js'));
+  }
+  return tesseractModule;
+}
 
 function withTimeout(promise, ms, label) {
   let timer;
@@ -100,6 +112,7 @@ export async function warmOCR() {
   if (workerReady) return workerReady;
 
   workerReady = (async () => {
+    const Tesseract = await getTesseract();
     const worker = await Tesseract.createWorker('eng', 1, { logger: () => {} });
     await worker.setParameters({
       tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
@@ -181,6 +194,7 @@ async function performTesseractOCR(imageSource) {
   }
 
   try {
+    const Tesseract = await getTesseract();
     const result = worker
       ? await withTimeout(worker.recognize(imageSource), OCR_TIMEOUT_MS, 'OCR')
       : await withTimeout(
@@ -238,6 +252,10 @@ export async function performOCR(imageSource) {
         console.warn('Gemini OCR unavailable, falling back to Tesseract:', message);
         errors.push(message);
       }
+    }
+
+    if (!SHOULD_USE_TESSERACT) {
+      throw new Error('Gemini Vision OCR is unavailable. Please retry shortly. Local Tesseract OCR is disabled on Vercel because it exceeds serverless execution limits.');
     }
 
     const result = await performTesseractOCR(prepared.path);
