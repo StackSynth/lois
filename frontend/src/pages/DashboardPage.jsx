@@ -158,6 +158,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <Box
+        className="dashboard-theme"
         sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -192,6 +193,7 @@ export default function DashboardPage() {
 
   return (
     <Box
+      className="dashboard-theme"
       sx={{
         position: 'relative',
         minHeight: '100%',

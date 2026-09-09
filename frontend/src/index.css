@@ -13,6 +13,19 @@
   .glass-nav { background: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.9); box-shadow: 0 12px 40px rgba(10,15,30,.07); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
   .glass-panel { background: rgba(255,255,255,.76); border: 1px solid rgba(226,232,240,.92); box-shadow: 0 24px 80px rgba(10,15,30,.08); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
   .text-balance { text-wrap: balance; }
+  .dashboard-theme { background: #0a0f1e; color: #f8fafc; }
+  .dashboard-theme .MuiCard-root,
+  .dashboard-theme .MuiPaper-root:not(.MuiTableContainer-root) { background: rgba(18, 24, 38, .84) !important; border-color: rgba(148, 163, 184, .16) !important; box-shadow: 0 18px 50px rgba(0, 0, 0, .2), inset 0 1px 0 rgba(255,255,255,.04) !important; }
+  .dashboard-theme .MuiCard-root:hover { border-color: rgba(45, 212, 191, .32) !important; box-shadow: 0 20px 56px rgba(0, 0, 0, .28), 0 0 32px rgba(45, 212, 191, .06) !important; }
+  .dashboard-theme .MuiTypography-root { color: #e2e8f0 !important; }
+  .dashboard-theme .MuiTableContainer-root { background: rgba(18, 24, 38, .9) !important; border: 1px solid rgba(148, 163, 184, .16) !important; box-shadow: 0 18px 50px rgba(0,0,0,.22) !important; }
+  .dashboard-theme .MuiTableCell-root { color: #cbd5e1 !important; border-color: rgba(148, 163, 184, .12) !important; }
+  .dashboard-theme .MuiTableHead-root .MuiTableCell-root { background: rgba(255,255,255,.04) !important; color: #94a3b8 !important; }
+  .dashboard-theme .MuiTableRow-hover:hover { background: rgba(45, 212, 191, .07) !important; }
+  .dashboard-theme .MuiButton-outlined { color: #a7f3d0 !important; border-color: rgba(45, 212, 191, .3) !important; }
+  .dashboard-theme .MuiButton-outlined:hover { background: rgba(45, 212, 191, .1) !important; }
+  .dashboard-theme .MuiChip-root { border-color: rgba(148, 163, 184, .22); }
+  .dashboard-theme .MuiLinearProgress-root { background: rgba(148, 163, 184, .18); }
   .hero-scan-grid { background-image: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse 65% 60% at 50% 35%, black, transparent); }
   .hero-enter { animation: hero-enter .36s both cubic-bezier(.16,1,.3,1); }
   .hero-enter-1 { animation-delay: .03s; }
