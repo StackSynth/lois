@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { getScan } from '../services/api';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
@@ -33,7 +33,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ScienceIcon from '@mui/icons-material/Science';
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 const STATUS_CHIP = {
   COMPLIANT: { label: 'Compliant', color: 'success', icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> },
@@ -74,6 +74,7 @@ function ScoreCircle({ score, size = 160 }) {
 
 export default function ReportPage() {
   const { scanId } = useParams();
+  const location = useLocation();
   const [scan, setScan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -92,6 +93,15 @@ export default function ReportPage() {
     };
     fetchScan();
   }, [scanId]);
+
+  useEffect(() => {
+    if (!loading && scan && location.state?.focusAi) {
+      const el = document.getElementById('ai-analysis');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, [loading, scan, location.state]);
 
   const toggleRule = (ruleId) => {
     setExpandedRules(prev => {
@@ -122,9 +132,21 @@ export default function ReportPage() {
   }
 
   const issueRules = scan.ruleResults?.filter(r => ['MISSING', 'INVALID', 'LOW_CONFIDENCE', 'REVIEW_REQUIRED'].includes(r.status)) || [];
+  const aiIssuesByField = new Map(
+    (scan.aiExplanation?.issues || []).map((issue) => [String(issue.field || '').toLowerCase(), issue])
+  );
 
   const confColor = (c) => c >= 80 ? 'success' : c >= 60 ? 'warning' : 'error';
   const confChipLabel = (c) => c >= 80 ? 'High' : c >= 60 ? 'Medium' : 'Low';
+
+  const getAiIssueForRule = (rule) => {
+    const byField = aiIssuesByField.get(String(rule.field || '').toLowerCase());
+    if (byField) return byField;
+    return (scan.aiExplanation?.issues || []).find((issue) =>
+      String(issue.field || '').toLowerCase().includes(String(rule.field || '').toLowerCase())
+      || String(rule.description || '').toLowerCase().includes(String(issue.field || '').toLowerCase())
+    );
+  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -172,21 +194,23 @@ export default function ReportPage() {
       </Card>
 
       {/* AI response and OCR quality summary */}
+      <Box id="ai-analysis" sx={{ scrollMarginTop: 96 }}>
       {scan.aiExplanation && (
         <Alert
           severity={scan.aiExplanation.overallAssessment === 'PASS' ? 'success' : scan.aiExplanation.overallAssessment === 'FAIL' ? 'error' : 'warning'}
           icon={<SmartToyIcon />}
           sx={{ mb: 4, '& .MuiAlert-message': { width: '100%' } }}
         >
-          <AlertTitle>AI explanation: {scan.aiExplanation.overallAssessment}</AlertTitle>
-          <Typography variant="body2" sx={{ color: '#ff9f43' }}>{scan.aiExplanation.userExplanation || scan.aiExplanation.summary}</Typography>
+          <AlertTitle>AI analysis: {scan.aiExplanation.overallAssessment}</AlertTitle>
+          <Typography variant="body2">{scan.aiExplanation.userExplanation || scan.aiExplanation.summary}</Typography>
           {scan.ocrResult?.confidence < 60 && (
-            <Typography variant="body2" sx={{ mt: 1, color: '#ff9f43' }}>
+            <Typography variant="body2" sx={{ mt: 1 }}>
               The image text was read with low confidence ({scan.ocrResult.confidence.toFixed(0)}%). Capture a clearer image with better lighting and make sure the label text is visible.
             </Typography>
           )}
         </Alert>
       )}
+      </Box>
 
       {/* AI Extracted Information */}
       <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -257,17 +281,31 @@ export default function ReportPage() {
                           <SmartToyIcon fontSize="small" color="primary" />
                           <Typography variant="subtitle2" color="primary.main">AI-Assisted Analysis</Typography>
                         </Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{rule.explanation?.summary}</Typography>
-                        {rule.explanation?.detail && (
-                          <Alert severity="info" variant="outlined" sx={{ mb: 1 }}>
-                            <Typography variant="body2"><strong>Why it matters:</strong> {rule.explanation.detail}</Typography>
-                          </Alert>
-                        )}
-                        {rule.explanation?.suggestion && rule.status !== 'COMPLIANT' && (
-                          <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
-                            <Typography variant="body2"><strong>Suggested action:</strong> {rule.explanation.suggestion}</Typography>
-                          </Alert>
-                        )}
+                        {(() => {
+                          const aiIssue = getAiIssueForRule(rule);
+                          return (
+                            <>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                {aiIssue?.reason || rule.explanation?.summary}
+                              </Typography>
+                              {aiIssue?.recommendation && (
+                                <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
+                                  <Typography variant="body2"><strong>AI recommendation:</strong> {aiIssue.recommendation}</Typography>
+                                </Alert>
+                              )}
+                              {!aiIssue && rule.explanation?.detail && (
+                                <Alert severity="info" variant="outlined" sx={{ mb: 1 }}>
+                                  <Typography variant="body2"><strong>Why it matters:</strong> {rule.explanation.detail}</Typography>
+                                </Alert>
+                              )}
+                              {!aiIssue && rule.explanation?.suggestion && rule.status !== 'COMPLIANT' && (
+                                <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
+                                  <Typography variant="body2"><strong>Suggested action:</strong> {rule.explanation.suggestion}</Typography>
+                                </Alert>
+                              )}
+                            </>
+                          );
+                        })()}
                         <Chip label={`📜 ${rule.reference}`} size="small" variant="outlined" sx={{ mt: 1 }} />
                       </Box>
                     </TableCell>
@@ -306,12 +344,18 @@ export default function ReportPage() {
       )}
 
       {/* AI Explanation */}
-      <Accordion defaultExpanded sx={{ mb: 4 }}>
+      <Accordion defaultExpanded sx={{ mb: 4 }} id="ai-assisted-explanation">
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SmartToyIcon color="primary" />
             <Typography variant="h6">AI-Assisted Explanation</Typography>
-            <Chip label="AI-assisted" size="small" variant="outlined" color="primary" sx={{ ml: 1 }} />
+            <Chip
+              label={scan.aiExplanation?.source === 'gemini' ? 'Gemini' : 'AI analysis'}
+              size="small"
+              variant="outlined"
+              color="primary"
+              sx={{ ml: 1 }}
+            />
           </Box>
         </AccordionSummary>
         <AccordionDetails>

@@ -22,9 +22,11 @@ export async function scanImage(req, res, next) {
 
     const scanId = uuidv4();
     const imageUrl = `/uploads/${req.file.filename}`;
+    const startedAt = Date.now();
 
-    // Step 1: OCR
+    // Step 1: OCR (bounded — see OCR_TIMEOUT_MS)
     const ocrResult = await performOCR(req.file.path);
+    console.log(`[scan ${scanId}] OCR done in ${Date.now() - startedAt}ms`);
 
     // Step 2: Extract fields
     const extractedFields = extractFields(ocrResult.text);
@@ -39,13 +41,16 @@ export async function scanImage(req, res, next) {
     const productNameField = extractedFields.find(f => f.field === 'productName');
     const productName = productNameField?.value || 'Unknown Product';
 
+    // Step 6: AI explanation (local always; Gemini when available / within timeout)
+    const aiStarted = Date.now();
     const aiExplanation = await generateExplanation({
       product: { name: productName, category },
       extractedFields,
       ruleResults
     });
+    console.log(`[scan ${scanId}] AI done in ${Date.now() - aiStarted}ms (source=${aiExplanation.source})`);
 
-    // Step 6: Store result
+    // Step 7: Store result
     const scan = createScan({
       id: scanId,
       productName,
@@ -65,6 +70,7 @@ export async function scanImage(req, res, next) {
     });
 
     scanStore.create(scan);
+    console.log(`[scan ${scanId}] total ${Date.now() - startedAt}ms`);
 
     res.json({ success: true, data: scan });
   } catch (error) {

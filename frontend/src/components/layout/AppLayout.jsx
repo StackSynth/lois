@@ -13,24 +13,27 @@ import ListItemText from '@mui/material/ListItemText';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
+import Chip from '@mui/material/Chip';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import MenuIcon from '@mui/icons-material/Menu';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import QrCodeScannerOutlinedIcon from '@mui/icons-material/QrCodeScannerOutlined';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
+import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
+import SearchIcon from '@mui/icons-material/Search';
 
 const NAV_ITEMS = [
-  { label: 'Work', path: '/dashboard' },
-  { label: 'About', path: '/' },
-  { label: 'Playground', path: '/scan' },
-  { label: 'Resource', path: '/history' },
-];
-
-const STARS = [
-  [6, 18, 1], [14, 72, 2], [22, 34, 1], [31, 12, 2], [39, 82, 1],
-  [48, 26, 1], [56, 64, 2], [64, 8, 1], [73, 43, 1], [82, 78, 2],
-  [91, 22, 1], [96, 58, 1], [11, 92, 1], [27, 60, 2], [68, 90, 1],
+  { label: 'Dashboard', path: '/dashboard', icon: <DashboardOutlinedIcon /> },
+  { label: 'New scan', path: '/scan', icon: <QrCodeScannerOutlinedIcon /> },
+  { label: 'Scan history', path: '/history', icon: <HistoryOutlinedIcon /> },
+  { label: 'Inspector console', path: '/inspector', icon: <FactCheckOutlinedIcon /> },
 ];
 
 export default function AppLayout({ children, toasts, onRemoveToast }) {
@@ -39,140 +42,57 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
-
   const currentToast = toasts?.[0];
 
+  const nav = (item) => (
+    <ListItemButton key={item.path} component={Link} to={item.path} selected={location.pathname === item.path} onClick={() => setDrawerOpen(false)} sx={{ borderRadius: 1.5, mb: 0.5, py: 1.1, '&.Mui-selected': { bgcolor: 'primary.main', color: '#fff', '& .MuiListItemIcon-root': { color: '#fff' } }, '&.Mui-selected:hover': { bgcolor: 'primary.dark' } }}>
+      <ListItemIcon sx={{ minWidth: 38, color: 'text.secondary' }}>{item.icon}</ListItemIcon>
+      <ListItemText primary={item.label} />
+    </ListItemButton>
+  );
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
-      <Box aria-hidden="true" sx={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        {STARS.map(([top, left, size], index) => (
-          <Box key={index} sx={{ position: 'absolute', top: `${top}%`, left: `${left}%`, width: size * 2, height: size * 2, borderRadius: '50%', bgcolor: '#fff', opacity: size === 2 ? 0.7 : 0.42, animation: `starTwinkle ${2.8 + (index % 4) * 0.7}s ease-in-out ${(index % 5) * 0.35}s infinite`, '@keyframes starTwinkle': { '0%, 100%': { opacity: size === 2 ? 0.28 : 0.18, transform: 'scale(0.8)' }, '50%': { opacity: size === 2 ? 0.9 : 0.62, transform: 'scale(1.25)' } } }} />
-        ))}
-      </Box>
-      {/* AppBar */}
-      <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1, bgcolor: 'transparent', border: 0, boxShadow: 'none', pt: 1.5 }}>
-        <Toolbar sx={{ gap: 1.5, maxWidth: 900, width: 'calc(100% - 32px)', mx: 'auto', minHeight: '48px !important', px: '10px !important', borderRadius: 99, bgcolor: '#111', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.16)' }}>
-          {isMobile && (
-            <IconButton color="inherit" onClick={() => setDrawerOpen(true)} edge="start" size="small">
-              <MenuIcon />
-            </IconButton>
-          )}
-
-          {/* Brand */}
-          <Box
-            component={Link}
-            to="/"
-            sx={{
-              display: 'flex', alignItems: 'center', gap: 1,
-              textDecoration: 'none', color: 'inherit', mr: { xs: 0, md: 2 },
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 900,
-                width: 28, height: 28, borderRadius: '50%', bgcolor: '#fff', color: '#111',
-                display: 'grid', placeItems: 'center', fontSize: '0.95rem',
-              }}
-            >
-              J
-            </Typography>
-            {!isMobile && (
-              <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, letterSpacing: '0.08em' }}>
-                JARVIS
-              </Typography>
-            )}
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1, bgcolor: 'background.paper', color: 'text.primary', border: 0, borderBottom: '1px solid', borderColor: 'divider', boxShadow: '0 2px 12px rgba(16,37,54,0.04)' }}>
+        <Toolbar sx={{ gap: 2, minHeight: '68px !important', px: { xs: 2, md: 3 } }}>
+          {isMobile && <IconButton color="inherit" onClick={() => setDrawerOpen(true)} edge="start"><MenuIcon /></IconButton>}
+          <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', gap: 1.2, textDecoration: 'none', color: 'inherit', mr: { xs: 0, md: 3 } }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, width: 34, height: 34, borderRadius: 1.5, bgcolor: 'primary.main', color: '#fff', display: 'grid', placeItems: 'center', fontSize: '1.05rem' }}>J</Typography>
+            {!isMobile && <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: '0.12em' }}>JARVIS</Typography>}
           </Box>
-
-          {/* Desktop Nav */}
-          {!isMobile && (
-            <Box sx={{ display: 'flex', gap: 0.25, flex: 1 }}>
-              {NAV_ITEMS.map(item => (
-                <Button
-                  key={item.path}
-                  component={Link}
-                  to={item.path}
-                  size="small"
-                  sx={{
-                    color: '#d4d4d4', bgcolor: 'transparent', borderRadius: 99,
-                    px: 1.25, minWidth: 0, fontSize: '0.68rem',
-                    '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.1)' },
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </Box>
-          )}
-
-          <Box sx={{ flex: isMobile ? 1 : 0 }} />
-
-          {/* Right actions */}
-          <Tooltip title="Help"><IconButton size="small" sx={{ color: '#d4d4d4' }}><HelpOutlineIcon fontSize="small" /></IconButton></Tooltip>
-          {!isMobile && (
-            <Button
-              size="small"
-              onClick={() => navigate('/signin')}
-              sx={{ ml: 0.5, px: 1.5, py: 0.65, borderRadius: 99, bgcolor: '#fff', color: '#111', fontSize: '0.68rem', '&:hover': { bgcolor: '#e5e5e5' } }}
-            >
-              Sign in
-            </Button>
-          )}
+          {!isMobile && <Box sx={{ maxWidth: 360, flex: 1, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 0.7 }}><SearchIcon fontSize="small" color="disabled" /><Typography variant="body2" color="text.secondary">Search scans, products or reports</Typography></Box>}
+          <Box sx={{ flex: 1 }} />
+          <Tooltip title="System status"><Chip icon={<ShieldOutlinedIcon />} label="System online" size="small" color="success" variant="outlined" sx={{ display: { xs: 'none', sm: 'flex' } }} /></Tooltip>
+          <Tooltip title="Notifications"><IconButton size="small" color="inherit"><NotificationsNoneOutlinedIcon /></IconButton></Tooltip>
+          <Tooltip title="Help"><IconButton size="small" color="inherit"><HelpOutlineIcon fontSize="small" /></IconButton></Tooltip>
+          {!isMobile && <Button size="small" onClick={() => navigate('/signin')} startIcon={<AccountCircleOutlinedIcon />} sx={{ ml: 0.5, px: 1.5, py: 0.65, color: 'text.primary' }}>Inspector</Button>}
         </Toolbar>
       </AppBar>
 
-      {/* Mobile Drawer */}
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      sx={{ '& .MuiDrawer-paper': { width: 260, pt: '64px', bgcolor: '#111', color: '#fff' } }}
-      >
-        <List sx={{ px: 1, pt: 1 }}>
-          {NAV_ITEMS.map(item => (
-            <ListItemButton
-              key={item.path}
-              component={Link}
-              to={item.path}
-              selected={location.pathname === item.path}
-              onClick={() => setDrawerOpen(false)}
-              sx={{ borderRadius: 2, mb: 0.5 }}
-            >
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          ))}
-        </List>
-        <Divider sx={{ my: 1 }} />
-        <List sx={{ px: 1 }}>
-          <ListItemButton component={Link} to="/scan" onClick={() => setDrawerOpen(false)} sx={{ borderRadius: 2, bgcolor: '#fff', color: '#111', '&:hover': { bgcolor: '#e5e5e5' } }}>
-            <ListItemText primary="Scan Now" />
-          </ListItemButton>
-        </List>
+      {!isMobile && <Drawer variant="permanent" sx={{ width: 248, flexShrink: 0, '& .MuiDrawer-paper': { width: 248, boxSizing: 'border-box', top: 68, height: 'calc(100% - 68px)', px: 1.5, py: 2 } }}>
+        <Typography variant="overline" color="text.secondary" sx={{ px: 1.5, mb: 1 }}>Workspace</Typography>
+        <List sx={{ p: 0 }}>{NAV_ITEMS.map(nav)}</List>
+        <Divider sx={{ my: 2 }} />
+        <Box sx={{ mt: 'auto', mx: 0.5, p: 2, bgcolor: 'secondary.light', borderRadius: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.dark' }}>LEGAL METROLOGY</Typography>
+          <Typography variant="body2" sx={{ mt: 0.5, color: 'text.primary' }}>Rules engine ready for your next label review.</Typography>
+        </Box>
+      </Drawer>}
+
+      <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)} sx={{ '& .MuiDrawer-paper': { width: 280, pt: '68px', px: 1.5 } }}>
+        <Typography variant="overline" color="text.secondary" sx={{ px: 1.5, mb: 1 }}>Workspace</Typography>
+        <List sx={{ p: 0 }}>{NAV_ITEMS.map(nav)}</List>
+        <Divider sx={{ my: 2 }} />
+        <Button component={Link} to="/scan" variant="contained" startIcon={<QrCodeScannerOutlinedIcon />} onClick={() => setDrawerOpen(false)} sx={{ mx: 1 }}>Start new scan</Button>
       </Drawer>
 
-      {/* Main Content */}
-      <Box component="main" sx={{ flex: 1, pt: '64px', position: 'relative', zIndex: 1 }}>
+      <Box component="main" sx={{ flex: 1, minWidth: 0, pt: '68px', position: 'relative', zIndex: 1 }}>
         {children}
       </Box>
 
-      {/* Snackbar Toast */}
-      {currentToast && (
-        <Snackbar
-          open={true}
-          autoHideDuration={currentToast.duration > 0 ? currentToast.duration : null}
-          onClose={() => onRemoveToast(currentToast.id)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        >
-          <Alert
-            severity={currentToast.type === 'error' ? 'error' : currentToast.type === 'warning' ? 'warning' : currentToast.type === 'success' ? 'success' : 'info'}
-            onClose={() => onRemoveToast(currentToast.id)}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {currentToast.message}
-          </Alert>
-        </Snackbar>
-      )}
+      {currentToast && <Snackbar open autoHideDuration={currentToast.duration > 0 ? currentToast.duration : null} onClose={() => onRemoveToast(currentToast.id)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity={currentToast.type === 'error' ? 'error' : currentToast.type === 'warning' ? 'warning' : currentToast.type === 'success' ? 'success' : 'info'} onClose={() => onRemoveToast(currentToast.id)} variant="filled" sx={{ width: '100%' }}>{currentToast.message}</Alert>
+      </Snackbar>}
     </Box>
   );
 }

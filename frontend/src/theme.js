@@ -4,15 +4,15 @@ const getTheme = (mode) => createTheme({
   palette: {
     mode,
     ...(mode === 'light' ? {
-      primary: { main: '#111111', light: '#333333', dark: '#000000' },
-      secondary: { main: '#666666' },
-      background: { default: '#f5f5f3', paper: '#ffffff' },
-      text: { primary: '#111111', secondary: '#666666' },
+      primary: { main: '#12304a', light: '#275a7d', dark: '#0a1f31' },
+      secondary: { main: '#168f8a', light: '#d8f3ef', dark: '#0b625f' },
+      background: { default: '#f3f6f8', paper: '#ffffff' },
+      text: { primary: '#102536', secondary: '#607385' },
       success: { main: '#16a34a', light: '#dcfce7', dark: '#15803d' },
       warning: { main: '#d97706', light: '#fef3c7', dark: '#b45309' },
       error: { main: '#dc2626', light: '#fee2e2', dark: '#b91c1c' },
-      info: { main: '#0891b2' },
-      divider: 'rgba(0,0,0,0.08)',
+      info: { main: '#2878b8' },
+      divider: 'rgba(16,37,54,0.10)',
     } : {
       primary: { main: '#ffffff', light: '#ffffff', dark: '#d4d4d4' },
       secondary: { main: '#bdbdbd' },
@@ -26,9 +26,9 @@ const getTheme = (mode) => createTheme({
     }),
   },
   typography: {
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    h1: { fontWeight: 800, letterSpacing: '-0.02em' },
-    h2: { fontWeight: 700, letterSpacing: '-0.01em' },
+    fontFamily: "'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    h1: { fontWeight: 800, letterSpacing: '-0.03em' },
+    h2: { fontWeight: 800, letterSpacing: '-0.025em' },
     h3: { fontWeight: 700 },
     h4: { fontWeight: 600 },
     h5: { fontWeight: 600 },
@@ -38,11 +38,12 @@ const getTheme = (mode) => createTheme({
     button: { fontWeight: 600, textTransform: 'none' },
     overline: { fontWeight: 600, letterSpacing: '0.08em' },
   },
-  shape: { borderRadius: 12 },
+  shape: { borderRadius: 10 },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
+          backgroundColor: mode === 'light' ? '#f3f6f8' : '#0a0f1a',
           scrollbarWidth: 'thin',
           '&::-webkit-scrollbar': { width: 8 },
           '&::-webkit-scrollbar-track': { background: mode === 'light' ? '#f1f5f9' : '#0a0f1a' },
@@ -68,6 +69,7 @@ const getTheme = (mode) => createTheme({
       styleOverrides: {
         root: {
           border: `1px solid ${mode === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'}`,
+          boxShadow: mode === 'light' ? '0 5px 18px rgba(16,37,54,0.045)' : 'none',
           transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
           '&:hover': {
             borderColor: mode === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.1)',
@@ -77,10 +79,10 @@ const getTheme = (mode) => createTheme({
     },
     MuiButton: {
       styleOverrides: {
-        root: { borderRadius: 10, padding: '8px 20px' },
+        root: { borderRadius: 8, padding: '9px 20px' },
         containedPrimary: {
-          boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-          '&:hover': { boxShadow: '0 4px 16px rgba(0,0,0,0.28)' },
+          boxShadow: '0 3px 9px rgba(18,48,74,0.20)',
+          '&:hover': { boxShadow: '0 6px 16px rgba(18,48,74,0.24)' },
         },
       },
     },

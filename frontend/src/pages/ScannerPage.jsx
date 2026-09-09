@@ -35,6 +35,7 @@ export default function ScannerPage() {
   const [preview, setPreview] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeStage, setAnalyzeStage] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [quality, setQuality] = useState(null);
 
@@ -170,13 +171,28 @@ export default function ScannerPage() {
       return;
     }
     setIsAnalyzing(true);
+    const stages = [
+      'Reading label text…',
+      'Extracting declarations…',
+      'Checking Legal Metrology rules…',
+      'Generating AI analysis…'
+    ];
+    let stageIndex = 0;
+    setAnalyzeStage(stages[0]);
+    const stageTimer = setInterval(() => {
+      stageIndex = Math.min(stageIndex + 1, stages.length - 1);
+      setAnalyzeStage(stages[stageIndex]);
+    }, 2500);
+
     try {
       const result = await scanImage(selectedFile);
-      toast.success('Analysis complete!');
-      navigate(`/report/${result.data.id}`);
+      toast.success('AI analysis ready');
+      navigate(`/report/${result.data.id}`, { state: { focusAi: true } });
     } catch (err) {
       toast.error('Analysis failed: ' + err.message);
     } finally {
+      clearInterval(stageTimer);
+      setAnalyzeStage('');
       setIsAnalyzing(false);
     }
   };
@@ -300,6 +316,11 @@ export default function ScannerPage() {
           >
             {isAnalyzing ? 'Analyzing Label...' : 'Analyze Label'}
           </Button>
+          {isAnalyzing && (
+            <Alert severity="info" icon={<InfoIcon />}>
+              {analyzeStage || 'Starting analysis…'} This can take up to about a minute on the first run.
+            </Alert>
+          )}
         </Box>
       )}
 

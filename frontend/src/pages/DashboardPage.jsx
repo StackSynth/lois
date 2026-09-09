@@ -26,6 +26,8 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 const STATUS_CHIP = {
   COMPLIANT: { label: 'Compliant', color: 'success' },
@@ -70,11 +72,10 @@ export default function DashboardPage() {
   };
 
   const statCards = [
-    { label: 'Total Scans', value: stats.total, icon: <AssignmentIcon />, color: 'primary.main' },
-    { label: 'Compliant', value: stats.compliant, icon: <CheckCircleIcon />, color: 'success.main' },
-    { label: 'Needs Review', value: stats.attention, icon: <WarningAmberIcon />, color: 'warning.main' },
-    { label: 'Non-Compliant', value: stats.nonCompliant, icon: <CancelIcon />, color: 'error.main' },
-    { label: 'Avg Score', value: stats.avgScore, icon: <TrendingUpIcon />, color: 'info.main' },
+    { label: 'Total products scanned', value: stats.total, icon: <AssignmentIcon />, color: 'primary.main', note: 'All-time activity' },
+    { label: 'Compliant products', value: stats.compliant, icon: <CheckCircleIcon />, color: 'success.main', note: 'Ready for release' },
+    { label: 'Pending review', value: stats.attention, icon: <WarningAmberIcon />, color: 'warning.main', note: 'Needs attention' },
+    { label: 'Non-compliant', value: stats.nonCompliant, icon: <CancelIcon />, color: 'error.main', note: 'Action required' },
   ];
 
   if (loading) {
@@ -86,44 +87,53 @@ export default function DashboardPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Greeting */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4">{getGreeting()} 👋</Typography>
-        <Typography variant="subtitle1">Packaged Commodity Compliance Overview</Typography>
+    <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, md: 4 } }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2, mb: 4, flexWrap: 'wrap' }}>
+        <Box>
+          <Typography variant="overline" color="secondary.main">Compliance operations</Typography>
+          <Typography variant="h4" sx={{ mt: 0.5 }}>{getGreeting()}, Inspector</Typography>
+          <Typography variant="subtitle1">Monitor, scan and manage packaged commodity compliance.</Typography>
+        </Box>
+        <Button variant="contained" size="large" startIcon={<QrCodeScannerIcon />} onClick={() => navigate('/scan')}>New scan</Button>
       </Box>
 
+      <Card sx={{ mb: 3, bgcolor: 'primary.main', color: '#fff', overflow: 'hidden', position: 'relative' }}>
+        <CardContent sx={{ p: { xs: 2.5, md: 3.5 }, position: 'relative', zIndex: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}><AutoAwesomeIcon sx={{ color: '#7dd3c7' }} /><Typography variant="overline" sx={{ color: '#b8e6df' }}>AI compliance desk</Typography></Box>
+          <Typography variant="h5" sx={{ color: '#fff', maxWidth: 620, mb: 1 }}>A clear view of every label decision.</Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.72)', maxWidth: 620 }}>Jarvis combines OCR confidence, mandatory declaration checks and Legal Metrology rules into an audit-ready review.</Typography>
+        </CardContent>
+        <Box sx={{ position: 'absolute', right: -30, top: -70, width: 260, height: 260, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.14)' }} />
+        <Box sx={{ position: 'absolute', right: 40, bottom: -110, width: 220, height: 220, borderRadius: '50%', border: '1px solid rgba(125,211,199,0.25)' }} />
+      </Card>
+
       {/* Stats */}
-      <Grid container spacing={2.5} sx={{ mb: 4 }}>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
         {statCards.map(card => (
-          <Grid item xs={6} sm={4} md key={card.label}>
-            <Card sx={{ '&:hover': { boxShadow: 3 } }}>
-              <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3 }}>
-                <Box sx={{ color: card.color, mb: 1.5 }}>{card.icon}</Box>
-                <Typography variant="h3" sx={{ fontWeight: 800, lineHeight: 1, color: card.color }}>{card.value}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{card.label}</Typography>
+          <Grid item xs={12} sm={6} lg={3} key={card.label}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent sx={{ py: 2.5 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}><Box sx={{ width: 38, height: 38, display: 'grid', placeItems: 'center', borderRadius: 1.5, bgcolor: `${card.color.replace('.main', '')}.light`, color: card.color }}>{card.icon}</Box><Typography variant="caption" color="text.secondary">Live</Typography></Box>
+                <Typography variant="h3" sx={{ fontWeight: 800, lineHeight: 1, color: 'text.primary' }}>{card.value}</Typography>
+                <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>{card.label}</Typography>
+                <Typography variant="caption" color="text.secondary">{card.note}</Typography>
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
 
-      {/* Quick Actions */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
-        <Button variant="contained" startIcon={<QrCodeScannerIcon />} onClick={() => navigate('/scan')}>Scan Product</Button>
-        <Button variant="outlined" onClick={() => navigate('/inspector')}>Inspector Console</Button>
-        <Button variant="outlined" onClick={() => navigate('/history')}>View History</Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box><Typography variant="h6">Recent scans</Typography><Typography variant="body2" color="text.secondary">Latest compliance activity across your workspace</Typography></Box>
+        <Button endIcon={<ArrowForwardIcon />} onClick={() => navigate('/history')}>View all</Button>
       </Box>
-
-      {/* Recent Scans */}
-      <Typography variant="h6" sx={{ mb: 2 }}>Recent Scans</Typography>
       {recentScans.length === 0 ? (
         <Card>
-          <CardContent sx={{ textAlign: 'center', py: 6 }}>
+          <CardContent sx={{ textAlign: 'center', py: 8 }}>
             <AssignmentIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2, opacity: 0.5 }} />
             <Typography variant="h6" color="text.secondary">No scans yet</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Scan a product label or try a demo to get started.</Typography>
-            <Button variant="contained" onClick={() => navigate('/scan')}>Scan a Product</Button>
+            <Button variant="contained" startIcon={<QrCodeScannerIcon />} onClick={() => navigate('/scan')}>Start your first scan</Button>
           </CardContent>
         </Card>
       ) : (
