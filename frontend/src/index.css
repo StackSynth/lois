@@ -91,4 +91,33 @@
   @keyframes jarvis-scan { 0%, 100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(calc(100% + 360px)); opacity: 1; } }
   @keyframes jarvis-point { from { opacity: .25; transform: scale(.7); } to { opacity: 1; transform: scale(1.35); } }
   @media (prefers-reduced-motion: reduce) { .jarvis-scan-line, .jarvis-scan-point { animation: none; } }
+  /* Metallic silver visual system. These rules override the legacy accent colours only. */
+  .dashboard-theme, .dashboard-magma { background-color: #050505 !important; background-image: linear-gradient(rgba(192,192,192,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(192,192,192,.025) 1px, transparent 1px), radial-gradient(circle at 82% 14%, rgba(192,192,192,.10), transparent 25rem) !important; background-size: 52px 52px, 52px 52px, auto !important; }
+  .dashboard-theme .MuiCard-root, .dashboard-theme .MuiPaper-root, .dashboard-theme .MuiTableContainer-root { background: #111111 !important; border-color: #2a2a2a !important; box-shadow: inset 0 1px 0 rgba(232,232,232,.04) !important; }
+  .dashboard-theme .MuiCard-root:hover { border-color: #555555 !important; box-shadow: inset 0 1px 0 rgba(232,232,232,.07), 0 10px 28px rgba(0,0,0,.25) !important; }
+  .dashboard-theme .MuiTypography-root { color: #f2f2f2 !important; }
+  .dashboard-theme .MuiTableCell-root { color: #a3a3a3 !important; border-color: #2a2a2a !important; }
+  .dashboard-theme .MuiTableHead-root .MuiTableCell-root { background: #161616 !important; color: #7a7a7a !important; }
+  .dashboard-theme .MuiTableRow-hover:hover { background: rgba(192,192,192,.055) !important; }
+  .dashboard-theme .MuiButton-contained { background: #e0e0e0 !important; color: #080808 !important; box-shadow: 0 5px 16px rgba(192,192,192,.12) !important; }
+  .dashboard-theme .MuiButton-contained:hover { background: #fff !important; }
+  .dashboard-theme .MuiButton-outlined { color: #d0d0d0 !important; border-color: #3a3a3a !important; }
+  .dashboard-theme .MuiButton-outlined:hover { background: #1a1a1a !important; border-color: #888 !important; }
+  .dashboard-theme .MuiChip-root { color: #d0d0d0 !important; background: #161616 !important; border-color: #3d3d3d !important; }
+  .dashboard-magma .text-\[\#ff4500\], .dashboard-magma .group-hover\:text-\[\#ff4500\]:is(.group:hover *) { color: #c0c0c0 !important; }
+  .dashboard-magma .bg-\[\#ff4500\] { background-color: #e0e0e0 !important; }
+  .dashboard-magma .border-\[\#ff4500\], .dashboard-magma .border-\[\#ff4500\]\/40, .dashboard-magma .border-\[\#ff4500\]\/50 { border-color: #3d3d3d !important; }
+  .dashboard-magma .hover\:border-\[\#ff4500\]:hover { border-color: #c0c0c0 !important; }
+  .dashboard-magma .hover\:bg-\[\#ff4500\]\/10:hover { background-color: rgba(192,192,192,.08) !important; }
+  .dashboard-magma .shadow-\[0_0_10px_\#ff4500\] { box-shadow: 0 0 10px #c0c0c0 !important; }
+  .network-path { stroke: #c0c0c0; } .network-node, .network-pulse-delayed { fill: #c0c0c0; filter: drop-shadow(0 0 5px #c0c0c0); } .network-pulse { fill: #e8e8e8; filter: drop-shadow(0 0 5px #c0c0c0); }
+  .jarvis-scanner, .jarvis-report, .jarvis-processing { background-color: #050505 !important; background-image: radial-gradient(circle at 65% 20%, rgba(192,192,192,.10), transparent 23rem), linear-gradient(rgba(192,192,192,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(192,192,192,.02) 1px, transparent 1px) !important; background-size: auto, 52px 52px, 52px 52px !important; }
+  .jarvis-scanner .MuiCard-root, .jarvis-scanner .MuiPaper-root, .jarvis-report .MuiCard-root, .jarvis-report .MuiPaper-root, .jarvis-report .MuiAccordion-root, .jarvis-processing .MuiCard-root { background: #111111 !important; border-color: #2a2a2a !important; }
+  .jarvis-scanner .MuiButton-contained { background: #e0e0e0 !important; color: #080808 !important; box-shadow: 0 5px 16px rgba(192,192,192,.12) !important; }
+  .jarvis-scanner .MuiButton-outlined { color: #d0d0d0 !important; border-color: #3a3a3a !important; }
+  .jarvis-scan-frame.is-analyzing { outline-color: rgba(192,192,192,.78); }
+  .jarvis-scan-overlay { background: linear-gradient(90deg, #c0c0c0 18px, transparent 18px) left top/42px 2px no-repeat, linear-gradient(#c0c0c0 18px, transparent 18px) left top/2px 42px no-repeat, linear-gradient(270deg, #c0c0c0 18px, transparent 18px) right top/42px 2px no-repeat, linear-gradient(#c0c0c0 18px, transparent 18px) right top/2px 42px no-repeat, linear-gradient(90deg, #c0c0c0 18px, transparent 18px) left bottom/42px 2px no-repeat, linear-gradient(#c0c0c0 18px, transparent 18px) left bottom/2px 42px no-repeat, linear-gradient(270deg, #c0c0c0 18px, transparent 18px) right bottom/42px 2px no-repeat, linear-gradient(#c0c0c0 18px, transparent 18px) right bottom/2px 42px no-repeat; }
+  .jarvis-scan-line { background: #e8e8e8; box-shadow: 0 0 16px 5px rgba(192,192,192,.55); }
+  .jarvis-scan-point { background: #e8e8e8; box-shadow: 0 0 9px #c0c0c0; }
+  .jarvis-processing .MuiCircularProgress-root, .jarvis-processing .MuiLinearProgress-bar, .jarvis-processing .MuiStepIcon-root.Mui-active, .jarvis-processing .MuiStepIcon-root.Mui-completed, .jarvis-processing .MuiStepLabel-label.Mui-active { color: #e8e8e8 !important; background-color: #e8e8e8 !important; filter: drop-shadow(0 0 6px rgba(192,192,192,.5)); }
 }
