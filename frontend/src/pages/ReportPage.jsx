@@ -33,7 +33,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ScienceIcon from '@mui/icons-material/Science';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlineOutlined';
+import ErrorOutlinedIcon from '@mui/icons-material/ErrorOutlined';
 
 const STATUS_CHIP = {
   COMPLIANT: { label: 'Compliant', color: 'success', icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> },
@@ -123,7 +123,7 @@ export default function ReportPage() {
   if (error || !scan) {
     return (
       <Container maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
-        <ErrorOutlineIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
+        <ErrorOutlinedIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
         <Typography variant="h5" gutterBottom>Report Not Found</Typography>
         <Typography color="text.secondary" sx={{ mb: 3 }}>{error || 'This scan result could not be found.'}</Typography>
         <Button variant="contained" component={Link} to="/scan" startIcon={<QrCodeScannerIcon />}>Scan New Product</Button>
