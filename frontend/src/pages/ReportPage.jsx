@@ -75,15 +75,39 @@ function ScoreCircle({ score, size = 160 }) {
 export default function ReportPage() {
   const { scanId } = useParams();
   const location = useLocation();
-  const [scan, setScan] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const navigationScan = location.state?.scan?.id === scanId ? location.state.scan : null;
+  const [scan, setScan] = useState(navigationScan);
+  const [loading, setLoading] = useState(!navigationScan);
   const [error, setError] = useState(null);
   const [expandedRules, setExpandedRules] = useState(new Set());
 
   useEffect(() => {
+    if (navigationScan) {
+      return;
+    }
+
+    let cachedScan = null;
+    try {
+      cachedScan = JSON.parse(sessionStorage.getItem(`jarvis-scan:${scanId}`) || 'null');
+    } catch {
+      cachedScan = null;
+    }
+
+    if (cachedScan?.id === scanId) {
+      console.log('Using cached report ID:', scanId);
+      setScan(cachedScan);
+      setLoading(false);
+      return;
+    }
+
     const fetchScan = async () => {
       try {
+        console.log('Fetching report ID:', scanId);
         const result = await getScan(scanId);
+        if (!result?.data?.id || result.data.id !== scanId) {
+          throw new Error('The report response did not contain the requested report ID.');
+        }
+        sessionStorage.setItem(`jarvis-scan:${scanId}`, JSON.stringify(result.data));
         setScan(result.data);
       } catch (err) {
         setError(err.message);
@@ -92,7 +116,7 @@ export default function ReportPage() {
       }
     };
     fetchScan();
-  }, [scanId]);
+  }, [scanId, navigationScan]);
 
   useEffect(() => {
     if (!loading && scan && location.state?.focusAi) {

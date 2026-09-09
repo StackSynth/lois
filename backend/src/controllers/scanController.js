@@ -70,10 +70,14 @@ export async function scanImage(req, res, next) {
       aiExplanation
     });
 
-    scanStore.create(scan);
+    console.log(`[scan ${scanId}] Analysis completed`);
+    console.log(`[scan ${scanId}] Saving report...`);
+    const savedScan = scanStore.create(scan);
+    console.log(`[scan ${scanId}] Saved report ID: ${savedScan.id}`);
     console.log(`[scan ${scanId}] total ${Date.now() - startedAt}ms`);
 
-    res.json({ success: true, data: scan });
+    console.log(`[scan ${scanId}] Returning report ID: ${savedScan.id}`);
+    res.json({ success: true, reportId: savedScan.id, data: savedScan });
   } catch (error) {
     next(error);
   }

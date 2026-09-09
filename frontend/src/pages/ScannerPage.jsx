@@ -190,12 +190,19 @@ export default function ScannerPage() {
 
     try {
       const result = await scanImage(selectedFile);
-      const scanId = result?.data?.id;
+      console.log('Analysis response:', result);
+      const report = result?.data;
+      const scanId = result?.reportId || report?.id;
       if (!scanId) {
         throw new Error('Scan completed without a report ID. Please try again.');
       }
+      if (!report || report.id !== scanId) {
+        throw new Error('The saved report ID did not match the report data. Please try again.');
+      }
+      sessionStorage.setItem(`jarvis-scan:${scanId}`, JSON.stringify(report));
+      console.log('Navigating to report:', scanId);
       toast.success('AI analysis ready');
-      navigate(`/report/${scanId}`, { state: { focusAi: true } });
+      navigate(`/report/${scanId}`, { state: { focusAi: true, scan: report } });
     } catch (err) {
       toast.error(err.message || 'Scan failed. Please try again.');
     } finally {

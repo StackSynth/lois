@@ -68,7 +68,13 @@ export default function LandingPage() {
     try {
       toast.info('Loading demo product...');
       const result = await runDemo(demoId);
-      navigate(`/report/${result.data.id}`);
+      const report = result?.data;
+      const scanId = result?.reportId || report?.id;
+      if (!scanId || !report || report.id !== scanId) {
+        throw new Error('The demo report ID was not returned correctly.');
+      }
+      sessionStorage.setItem(`jarvis-scan:${scanId}`, JSON.stringify(report));
+      navigate(`/report/${scanId}`, { state: { scan: report } });
     } catch (err) {
       toast.error('Failed to load demo: ' + err.message);
     }
