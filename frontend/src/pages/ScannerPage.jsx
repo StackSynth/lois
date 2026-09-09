@@ -237,7 +237,7 @@ export default function ScannerPage() {
   const chipColor = { ok: 'success', warning: 'warning', error: 'error', info: 'info' };
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, md: 4 } }}>
+    <Container className="jarvis-scanner" maxWidth="lg" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, md: 4 } }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="overline" color="secondary.main">New compliance review</Typography>
         <Typography variant="h4" sx={{ mt: 0.5 }} gutterBottom>Scan product label</Typography>
@@ -306,8 +306,9 @@ export default function ScannerPage() {
       {preview && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Card>
-            <Box sx={{ position: 'relative' }}>
+            <Box className={isAnalyzing ? 'jarvis-scan-frame is-analyzing' : 'jarvis-scan-frame'} sx={{ position: 'relative' }}>
               <img src={preview} alt="Label preview" style={{ width: '100%', maxHeight: 400, objectFit: 'contain', display: 'block', background: '#0a0f1a' }} />
+              {isAnalyzing && <Box className="jarvis-scan-overlay" aria-hidden="true"><span className="jarvis-scan-line" /><i className="jarvis-scan-point point-one" /><i className="jarvis-scan-point point-two" /><i className="jarvis-scan-point point-three" /></Box>}
               <IconButton onClick={clearSelection} size="small" sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'rgba(0,0,0,0.6)', color: 'white', '&:hover': { bgcolor: 'error.main' } }}>
                 <CloseIcon fontSize="small" />
               </IconButton>

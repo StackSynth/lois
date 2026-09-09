@@ -315,7 +315,7 @@ export default function ReportPage() {
 
   if (error || !scan) {
     return (
-      <Container maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
+      <Container className="jarvis-report" maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
         <ErrorOutlinedIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
         <Typography variant="h5" gutterBottom>Report Not Found</Typography>
         <Typography color="text.secondary" sx={{ mb: 3 }}>{error || 'This scan result could not be found.'}</Typography>
@@ -342,7 +342,7 @@ export default function ReportPage() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container className="jarvis-report" maxWidth="lg" sx={{ py: 4 }}>
       {/* Demo Banner */}
       {scan.isDemo && (
         <Alert severity="warning" icon={<ScienceIcon />} sx={{ mb: 3 }}>

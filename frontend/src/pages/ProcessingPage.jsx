@@ -76,7 +76,7 @@ export default function ProcessingPage() {
   }, [progress, scanId, navigate]);
 
   return (
-    <Container maxWidth="sm" sx={{ py: 6, minHeight: '80vh', display: 'flex', alignItems: 'center' }}>
+    <Container className="jarvis-processing" maxWidth="sm" sx={{ py: 6, minHeight: '80vh', display: 'flex', alignItems: 'center' }}>
       <Card sx={{ width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
           {/* Header */}
