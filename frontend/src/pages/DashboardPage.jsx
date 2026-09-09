@@ -97,11 +97,11 @@ export default function DashboardPage() {
         <Button variant="contained" size="large" startIcon={<QrCodeScannerIcon />} onClick={() => navigate('/scan')}>New scan</Button>
       </Box>
 
-      <Card sx={{ mb: 3, bgcolor: 'primary.main', color: '#fff', overflow: 'hidden', position: 'relative' }}>
+      <Card sx={{ mb: 3, bgcolor: '#12304a', color: '#f8fafc', overflow: 'hidden', position: 'relative', border: '1px solid rgba(125,211,199,0.25)' }}>
         <CardContent sx={{ p: { xs: 2.5, md: 3.5 }, position: 'relative', zIndex: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}><AutoAwesomeIcon sx={{ color: '#7dd3c7' }} /><Typography variant="overline" sx={{ color: '#b8e6df' }}>AI compliance desk</Typography></Box>
-          <Typography variant="h5" sx={{ color: '#fff', maxWidth: 620, mb: 1 }}>A clear view of every label decision.</Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.72)', maxWidth: 620 }}>Jarvis combines OCR confidence, mandatory declaration checks and Legal Metrology rules into an audit-ready review.</Typography>
+          <Typography variant="h5" sx={{ color: '#f8fafc', maxWidth: 620, mb: 1 }}>A clear view of every label decision.</Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(248,250,252,0.78)', maxWidth: 620 }}>Jarvis combines OCR confidence, mandatory declaration checks and Legal Metrology rules into an audit-ready review.</Typography>
         </CardContent>
         <Box sx={{ position: 'absolute', right: -30, top: -70, width: 260, height: 260, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.14)' }} />
         <Box sx={{ position: 'absolute', right: 40, bottom: -110, width: 220, height: 220, borderRadius: '50%', border: '1px solid rgba(125,211,199,0.25)' }} />

@@ -45,9 +45,9 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
   const currentToast = toasts?.[0];
 
   const nav = (item) => (
-    <ListItemButton key={item.path} component={Link} to={item.path} selected={location.pathname === item.path} onClick={() => setDrawerOpen(false)} sx={{ borderRadius: 1.5, mb: 0.5, py: 1.1, '&.Mui-selected': { bgcolor: 'primary.main', color: '#fff', '& .MuiListItemIcon-root': { color: '#fff' } }, '&.Mui-selected:hover': { bgcolor: 'primary.dark' } }}>
+    <ListItemButton key={item.path} component={Link} to={item.path} selected={location.pathname === item.path} onClick={() => setDrawerOpen(false)} sx={{ borderRadius: 1.5, mb: 0.5, py: 1.1, '&.Mui-selected': { bgcolor: 'primary.main', color: 'primary.contrastText', '& .MuiListItemIcon-root': { color: 'primary.contrastText' } }, '&.Mui-selected:hover': { bgcolor: 'primary.dark', color: 'primary.contrastText' } }}>
       <ListItemIcon sx={{ minWidth: 38, color: 'text.secondary' }}>{item.icon}</ListItemIcon>
-      <ListItemText primary={item.label} />
+      <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 600 }} />
     </ListItemButton>
   );
 
@@ -57,8 +57,8 @@ export default function AppLayout({ children, toasts, onRemoveToast }) {
         <Toolbar sx={{ gap: 2, minHeight: '68px !important', px: { xs: 2, md: 3 } }}>
           {isMobile && <IconButton color="inherit" onClick={() => setDrawerOpen(true)} edge="start"><MenuIcon /></IconButton>}
           <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', gap: 1.2, textDecoration: 'none', color: 'inherit', mr: { xs: 0, md: 3 } }}>
-            <Typography variant="h6" sx={{ fontWeight: 900, width: 34, height: 34, borderRadius: 1.5, bgcolor: 'primary.main', color: '#fff', display: 'grid', placeItems: 'center', fontSize: '1.05rem' }}>J</Typography>
-            {!isMobile && <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: '0.12em' }}>JARVIS</Typography>}
+            <Typography variant="h6" sx={{ fontWeight: 900, width: 34, height: 34, borderRadius: 1.5, bgcolor: 'primary.main', color: 'primary.contrastText', display: 'grid', placeItems: 'center', fontSize: '1.05rem' }}>J</Typography>
+            {!isMobile && <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, letterSpacing: '0.12em' }}>JARVIS</Typography>}
           </Box>
           {!isMobile && <Box sx={{ maxWidth: 360, flex: 1, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 0.7 }}><SearchIcon fontSize="small" color="disabled" /><Typography variant="body2" color="text.secondary">Search scans, products or reports</Typography></Box>}
           <Box sx={{ flex: 1 }} />
