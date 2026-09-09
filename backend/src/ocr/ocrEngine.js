@@ -12,7 +12,7 @@ import sharp from 'sharp';
 const OCR_TIMEOUT_MS = Number(process.env.OCR_TIMEOUT_MS || 30000);
 const GEMINI_OCR_TIMEOUT_MS = Number(process.env.GEMINI_OCR_TIMEOUT_MS || 10000);
 const OCR_WARMUP_TIMEOUT_MS = Number(process.env.OCR_WARMUP_TIMEOUT_MS || 8000);
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MAX_OCR_EDGE = Number(process.env.OCR_MAX_EDGE || 1200);
 const MAX_INLINE_BYTES = 3.5 * 1024 * 1024;
