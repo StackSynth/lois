@@ -6,20 +6,14 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import sharp from 'sharp';
+import { resolveGeminiModel, geminiGenerateUrl } from '../ai/geminiConfig.js';
 
 // Keep a scan interactive. A provider that has not responded within these
 // bounds is unlikely to be useful to the person waiting at the scanner.
 const OCR_TIMEOUT_MS = Number(process.env.OCR_TIMEOUT_MS || 30000);
 const GEMINI_OCR_TIMEOUT_MS = Number(process.env.GEMINI_OCR_TIMEOUT_MS || 10000);
 const OCR_WARMUP_TIMEOUT_MS = Number(process.env.OCR_WARMUP_TIMEOUT_MS || 8000);
-const configuredModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-// Protect deployments that still have a retired 2.0 model in their Vercel
-// environment variables. The environment value should still be updated there.
-const MODEL = /^gemini-2\.0-/.test(configuredModel) ? 'gemini-2.5-flash' : configuredModel;
-if (MODEL !== configuredModel) {
-  console.warn(`Ignoring retired GEMINI_MODEL=${configuredModel}; using ${MODEL}.`);
-}
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const MODEL = resolveGeminiModel();
 const MAX_OCR_EDGE = Number(process.env.OCR_MAX_EDGE || 1200);
 const MAX_INLINE_BYTES = 3.5 * 1024 * 1024;
 // Vercel functions should use the external Gemini Vision request only. Local
@@ -147,7 +141,7 @@ async function performGeminiOCR({ buffer, mimeType }) {
   const timeout = setTimeout(() => controller.abort(), GEMINI_OCR_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_URL}/${MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+    const response = await fetch(geminiGenerateUrl(MODEL, apiKey), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,

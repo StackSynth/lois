@@ -1,11 +1,6 @@
-const configuredModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-// Protect deployments that still have a retired 2.0 model in their Vercel
-// environment variables. The environment value should still be updated there.
-const MODEL = /^gemini-2\.0-/.test(configuredModel) ? 'gemini-2.5-flash' : configuredModel;
-if (MODEL !== configuredModel) {
-  console.warn(`Ignoring retired GEMINI_MODEL=${configuredModel}; using ${MODEL}.`);
-}
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+import { resolveGeminiModel, geminiGenerateUrl } from './geminiConfig.js';
+
+const MODEL = resolveGeminiModel();
 const REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 6000);
 
 const EMPTY_EXPLANATION = {
@@ -166,7 +161,7 @@ async function callGemini({ product, extractedFields, ruleResults }) {
   try {
     const controller = new AbortController();
     timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    const response = await fetch(`${API_URL}/${MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+    const response = await fetch(geminiGenerateUrl(MODEL, apiKey), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
