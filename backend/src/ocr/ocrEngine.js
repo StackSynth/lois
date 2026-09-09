@@ -11,12 +11,15 @@ import { resolveGeminiModel, geminiGenerateUrl } from '../ai/geminiConfig.js';
 
 // Vercel function maxDuration is 60s — leave room for AI explanation after OCR.
 const OCR_TIMEOUT_MS = Number(process.env.OCR_TIMEOUT_MS || 30000);
-const GEMINI_OCR_TIMEOUT_MS = Number(process.env.GEMINI_OCR_TIMEOUT_MS || 28000);
-const GEMINI_OCR_RETRY_TIMEOUT_MS = Number(process.env.GEMINI_OCR_RETRY_TIMEOUT_MS || 18000);
+const GEMINI_OCR_TIMEOUT_MS = Number(process.env.GEMINI_OCR_TIMEOUT_MS || 15000);
+const GEMINI_OCR_TOTAL_TIMEOUT_MS = Number(process.env.GEMINI_OCR_TOTAL_TIMEOUT_MS || 45000);
+const GEMINI_MAX_RETRIES = Math.max(0, Math.min(Number(process.env.GEMINI_MAX_RETRIES || 2), 2));
+const GEMINI_RETRY_BASE_DELAY_MS = Number(process.env.GEMINI_RETRY_BASE_DELAY_MS || 2000);
+const GEMINI_RETRY_MAX_DELAY_MS = Number(process.env.GEMINI_RETRY_MAX_DELAY_MS || 5000);
 const OCR_WARMUP_TIMEOUT_MS = Number(process.env.OCR_WARMUP_TIMEOUT_MS || 8000);
 const MODEL = resolveGeminiModel();
-const MAX_OCR_EDGE = Number(process.env.OCR_MAX_EDGE || 1024);
-const FAST_OCR_EDGE = Number(process.env.OCR_FAST_EDGE || 768);
+const MAX_OCR_EDGE = Number(process.env.OCR_MAX_EDGE || 1400);
+const OCR_JPEG_QUALITY = Number(process.env.OCR_JPEG_QUALITY || 82);
 const MAX_INLINE_BYTES = 2 * 1024 * 1024;
 // Vercel functions should use the external Gemini Vision request only. Local
 // Tesseract is CPU-heavy, suffers cold starts, and is unsuitable as a
@@ -47,6 +50,16 @@ function isAbortError(error) {
   return error?.name === 'AbortError' || /timed out after/i.test(error?.message || '');
 }
 
+function isRetryableGeminiError(error) {
+  return isAbortError(error)
+    || error?.name === 'TypeError'
+    || [429, 500, 502, 503, 504].includes(error?.status);
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function errorDetails(error) {
   return {
     name: error?.name,
@@ -63,11 +76,55 @@ function logGeminiOCR(event, details = {}) {
   }));
 }
 
+async function runGeminiOCRWithRetries(prepared, started, errors) {
+  const maxAttempts = GEMINI_MAX_RETRIES + 1;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const elapsedMs = Date.now() - started;
+    const remainingMs = GEMINI_OCR_TOTAL_TIMEOUT_MS - elapsedMs;
+    if (remainingMs <= 0) {
+      errors.push(`Gemini OCR total timeout after ${GEMINI_OCR_TOTAL_TIMEOUT_MS}ms`);
+      return null;
+    }
+
+    const attemptTimeoutMs = Math.min(GEMINI_OCR_TIMEOUT_MS, remainingMs);
+    logGeminiOCR('attempt-start', { attempt, maxAttempts, attemptTimeoutMs, remainingMs });
+    try {
+      const result = await performGeminiOCR(prepared, attemptTimeoutMs);
+      console.log(`OCR (gemini) completed in ${Date.now() - started}ms (attempt=${attempt})`);
+      return result;
+    } catch (error) {
+      const message = isAbortError(error)
+        ? `Gemini OCR attempt ${attempt} timed out after ${attemptTimeoutMs}ms`
+        : error.message;
+      console.warn('[gemini-ocr] attempt-failed', JSON.stringify({
+        attempt,
+        elapsedMs: Date.now() - started,
+        error: errorDetails(error)
+      }));
+      errors.push(message);
+
+      if (!isRetryableGeminiError(error) || attempt === maxAttempts) return null;
+
+      const retryDelayMs = Math.min(
+        GEMINI_RETRY_BASE_DELAY_MS * (2 ** (attempt - 1)),
+        GEMINI_RETRY_MAX_DELAY_MS,
+        Math.max(0, GEMINI_OCR_TOTAL_TIMEOUT_MS - (Date.now() - started))
+      );
+      if (retryDelayMs <= 0) return null;
+      logGeminiOCR('retry-scheduled', { nextAttempt: attempt + 1, retryDelayMs });
+      await wait(retryDelayMs);
+    }
+  }
+
+  return null;
+}
+
 /**
  * Always produce a lean JPEG for Gemini — phone photos are otherwise too large
  * and Vision requests frequently exceed short abort windows.
  */
-async function compressForOCR(imageSource, { maxEdge = MAX_OCR_EDGE, quality = 72 } = {}) {
+async function compressForOCR(imageSource, { maxEdge = MAX_OCR_EDGE, quality = OCR_JPEG_QUALITY } = {}) {
   const input = typeof imageSource === 'string'
     ? await fs.readFile(imageSource)
     : imageSource;
@@ -83,11 +140,11 @@ async function compressForOCR(imageSource, { maxEdge = MAX_OCR_EDGE, quality = 7
     .jpeg({ quality, mozjpeg: true })
     .toBuffer();
 
-  // If still huge, compress harder once more
+  // Recompress only when the Gemini inline-image limit still requires it.
   if (prepared.length > MAX_INLINE_BYTES) {
     return sharp(prepared)
-      .resize({ width: FAST_OCR_EDGE, height: FAST_OCR_EDGE, fit: 'inside' })
-      .jpeg({ quality: 60, mozjpeg: true })
+      .resize({ width: Math.min(maxEdge, 1024), height: Math.min(maxEdge, 1024), fit: 'inside' })
+      .jpeg({ quality: 72, mozjpeg: true })
       .toBuffer();
   }
 
@@ -151,6 +208,41 @@ export async function warmOCR() {
   return workerReady;
 }
 
+function parseGeminiOCRResponse(payload) {
+  const responseText = payload.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text)
+    .filter(Boolean)
+    .join('\n')
+    .trim() || '';
+  if (!responseText) throw new Error('Gemini OCR returned empty text');
+
+  try {
+    const value = JSON.parse(responseText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, ''));
+    const rawText = String(value.raw_text || value.rawText || '').trim();
+    if (!rawText) throw new Error('Gemini OCR JSON did not include raw_text');
+
+    return {
+      text: rawText,
+      confidence: Number.isFinite(Number(value.confidence)) ? Math.max(0, Math.min(100, Number(value.confidence))) : 88,
+      structured: {
+        product_name: value.product_name || null,
+        mrp: value.mrp || null,
+        net_quantity: value.net_quantity || null,
+        manufacturer_name: value.manufacturer_name || null,
+        manufacturer_address: value.manufacturer_address || null,
+        packed_date: value.packed_date || null,
+        consumer_care: value.consumer_care || null,
+        raw_text: rawText,
+        confidence: Number.isFinite(Number(value.confidence)) ? Number(value.confidence) : null
+      }
+    };
+  } catch (error) {
+    if (error.message === 'Gemini OCR JSON did not include raw_text') throw error;
+    // Preserve the existing extractor flow if the model returns plain OCR text.
+    return { text: responseText, confidence: 88, structured: null };
+  }
+}
+
 async function performGeminiOCR({ buffer, mimeType }, timeoutMs = GEMINI_OCR_TIMEOUT_MS) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
@@ -169,7 +261,9 @@ async function performGeminiOCR({ buffer, mimeType }, timeoutMs = GEMINI_OCR_TIM
     contents: [{
       parts: [
         {
-          text: 'Extract all readable text from this product label. Return only the raw text with line breaks. Do not invent text.'
+          text: `Read this product label and return only compact valid JSON. Do not assess compliance, explain rules, or invent values.
+Required keys: product_name, mrp, net_quantity, manufacturer_name, manufacturer_address, packed_date, consumer_care, raw_text, confidence.
+Use null for unreadable fields. raw_text must contain all readable label text with line breaks. confidence must be 0-100.`
         },
         {
           inlineData: {
@@ -181,7 +275,8 @@ async function performGeminiOCR({ buffer, mimeType }, timeoutMs = GEMINI_OCR_TIM
     }],
     generationConfig: {
       temperature: 0,
-      maxOutputTokens: 2048
+      maxOutputTokens: 1200,
+      responseMimeType: 'application/json'
     }
   });
   const requestUrl = geminiGenerateUrl(MODEL, apiKey);
@@ -229,17 +324,19 @@ async function performGeminiOCR({ buffer, mimeType }, timeoutMs = GEMINI_OCR_TIM
         status: response.status,
         details: details.slice(0, 1000)
       });
-      throw new Error(`Gemini OCR failed (${response.status}): ${details.slice(0, 300)}`);
+      const error = new Error(`Gemini OCR failed (${response.status}): ${details.slice(0, 300)}`);
+      error.status = response.status;
+      throw error;
     }
 
     const payload = await response.json();
-    const text = payload.candidates?.[0]?.content?.parts?.map((p) => p.text).filter(Boolean).join('\n').trim() || '';
-    if (!text) throw new Error('Gemini OCR returned empty text');
+    const extracted = parseGeminiOCRResponse(payload);
 
     return {
-      text,
-      confidence: 88,
-      words: text.split(/\s+/).filter(Boolean).map((w) => ({ text: w, confidence: 88, bbox: null })),
+      text: extracted.text,
+      confidence: extracted.confidence,
+      structured: extracted.structured,
+      words: extracted.text.split(/\s+/).filter(Boolean).map((w) => ({ text: w, confidence: extracted.confidence, bbox: null })),
       engine: 'gemini'
     };
   } catch (error) {
@@ -303,52 +400,18 @@ export async function performOCR(imageSource) {
   const started = Date.now();
   const errors = [];
   let prepared = { path: imageSource, cleanup: null, mimeType: 'image/jpeg', buffer: null };
-  let fastPrepared = null;
 
   try {
     if (typeof imageSource === 'string' || Buffer.isBuffer(imageSource)) {
-      prepared = await prepareImageForOCR(imageSource, { maxEdge: MAX_OCR_EDGE, quality: 72 });
+      prepared = await prepareImageForOCR(imageSource, { maxEdge: MAX_OCR_EDGE, quality: OCR_JPEG_QUALITY });
     }
 
     if (process.env.GEMINI_API_KEY && prepared.buffer) {
-      // First attempt — normal compressed image
-      try {
-        const result = await performGeminiOCR({
-          buffer: prepared.buffer,
-          mimeType: prepared.mimeType
-        }, GEMINI_OCR_TIMEOUT_MS);
-        console.log(`OCR (gemini) completed in ${Date.now() - started}ms`);
-        return result;
-      } catch (error) {
-        const message = isAbortError(error)
-          ? `Gemini OCR timed out after ${GEMINI_OCR_TIMEOUT_MS}ms`
-          : error.message;
-        console.warn('Gemini OCR first attempt failed:', message);
-        errors.push(message);
+      const geminiResult = await runGeminiOCRWithRetries(prepared, started, errors);
+      if (geminiResult) return geminiResult;
+    }
 
-        // Retry once with a smaller/faster image if the first call timed out
-        if (isAbortError(error) && (typeof imageSource === 'string' || Buffer.isBuffer(imageSource))) {
-          try {
-            fastPrepared = await prepareImageForOCR(imageSource, {
-              maxEdge: FAST_OCR_EDGE,
-              quality: 60
-            });
-            const result = await performGeminiOCR({
-              buffer: fastPrepared.buffer,
-              mimeType: fastPrepared.mimeType
-            }, GEMINI_OCR_RETRY_TIMEOUT_MS);
-            console.log(`OCR (gemini-retry) completed in ${Date.now() - started}ms`);
-            return result;
-          } catch (retryError) {
-            const retryMessage = isAbortError(retryError)
-              ? `Gemini OCR retry timed out`
-              : retryError.message;
-            console.warn('Gemini OCR retry failed:', retryMessage);
-            errors.push(retryMessage);
-          }
-        }
-      }
-    } else if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       errors.push('GEMINI_API_KEY is not configured');
     }
 
@@ -360,14 +423,21 @@ export async function performOCR(imageSource) {
     console.log(`OCR (tesseract) completed in ${Date.now() - started}ms`);
     return result;
   } catch (error) {
-    console.error('OCR Engine Error:', error);
+    console.error('[ocr] processing-failed', JSON.stringify({
+      elapsedMs: Date.now() - started,
+      imageBytes: prepared.buffer?.length || null,
+      error: errorDetails(error),
+      priorErrors: errors
+    }));
     const detail = errors.length
       ? `${error.message} (also: ${errors.join('; ')})`
       : error.message;
+    if (!SHOULD_USE_TESSERACT) {
+      throw new Error("We couldn't process this label right now. Please try again with a clear image.");
+    }
     throw new Error(`OCR processing failed: ${detail}`);
   } finally {
     if (prepared.cleanup) await prepared.cleanup();
-    if (fastPrepared?.cleanup) await fastPrepared.cleanup();
   }
 }
 

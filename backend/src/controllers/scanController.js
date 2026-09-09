@@ -58,7 +58,8 @@ export async function scanImage(req, res, next) {
       imageUrl,
       ocrResult: {
         text: ocrResult.text,
-        confidence: ocrResult.confidence
+        confidence: ocrResult.confidence,
+        structured: ocrResult.structured || null
       },
       extractedFields,
       ruleResults,

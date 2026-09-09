@@ -193,7 +193,10 @@ export default function ScannerPage() {
       toast.success('AI analysis ready');
       navigate(`/report/${result.data.id}`, { state: { focusAi: true } });
     } catch (err) {
-      toast.error('Analysis failed: ' + err.message);
+      const isOcrServiceError = /couldn't process this label|ocr processing failed|gemini vision|ocr timed out|tesseract/i.test(err.message || '');
+      toast.error(isOcrServiceError
+        ? "We couldn't process this label right now. Please try again with a clear image."
+        : 'Analysis failed: ' + err.message);
     } finally {
       clearInterval(stageTimer);
       setAnalyzeStage('');
