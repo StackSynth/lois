@@ -5,6 +5,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
+import { createHash } from 'crypto';
 import sharp from 'sharp';
 import { resolveGeminiModel, geminiGenerateUrl } from '../ai/geminiConfig.js';
 
@@ -44,6 +45,22 @@ function withTimeout(promise, ms, label) {
 
 function isAbortError(error) {
   return error?.name === 'AbortError' || /timed out after/i.test(error?.message || '');
+}
+
+function errorDetails(error) {
+  return {
+    name: error?.name,
+    message: error?.message,
+    cause: error?.cause instanceof Error ? error.cause.message : error?.cause,
+    stack: error?.stack
+  };
+}
+
+function logGeminiOCR(event, details = {}) {
+  console.info(`[gemini-ocr] ${event}`, JSON.stringify({
+    timestamp: new Date().toISOString(),
+    ...details
+  }));
 }
 
 /**
@@ -142,37 +159,76 @@ async function performGeminiOCR({ buffer, mimeType }, timeoutMs = GEMINI_OCR_TIM
     throw new Error(`Image still too large for Gemini OCR (${Math.round(buffer.length / 1024 / 1024)}MB)`);
   }
 
+  const imageBase64 = buffer.toString('base64');
+  const decodedImage = Buffer.from(imageBase64, 'base64');
+  if (decodedImage.length !== buffer.length || !decodedImage.equals(buffer)) {
+    throw new Error('Gemini OCR image base64 validation failed');
+  }
+
+  const requestBody = JSON.stringify({
+    contents: [{
+      parts: [
+        {
+          text: 'Extract all readable text from this product label. Return only the raw text with line breaks. Do not invent text.'
+        },
+        {
+          inlineData: {
+            mimeType: mimeType || 'image/jpeg',
+            data: imageBase64
+          }
+        }
+      ]
+    }],
+    generationConfig: {
+      temperature: 0,
+      maxOutputTokens: 2048
+    }
+  });
+  const requestUrl = geminiGenerateUrl(MODEL, apiKey);
+  const safeRequestUrl = requestUrl.replace(/([?&]key=)[^&]*/i, '$1[redacted]');
+  const requestStartedAt = Date.now();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => {
+    logGeminiOCR('abort-requested', { elapsedMs: Date.now() - requestStartedAt, timeoutMs });
+    controller.abort(new Error(`Gemini OCR timed out after ${timeoutMs}ms`));
+  }, timeoutMs);
+  controller.signal.addEventListener('abort', () => {
+    logGeminiOCR('abort-signal-fired', {
+      elapsedMs: Date.now() - requestStartedAt,
+      reason: String(controller.signal.reason?.message || controller.signal.reason || '')
+    });
+  }, { once: true });
 
   try {
-    const response = await fetch(geminiGenerateUrl(MODEL, apiKey), {
+    logGeminiOCR('request-start', {
+      model: MODEL,
+      url: safeRequestUrl,
+      headers: { 'content-type': 'application/json', apiKey: '[redacted in query string]' },
+      imageMimeType: mimeType || 'image/jpeg',
+      imageBytes: buffer.length,
+      imageBase64Bytes: Buffer.byteLength(imageBase64),
+      imageSha256: createHash('sha256').update(buffer).digest('hex'),
+      requestBodyBytes: Buffer.byteLength(requestBody)
+    });
+    const response = await fetch(requestUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            {
-              text: 'Extract all readable text from this product label. Return only the raw text with line breaks. Do not invent text.'
-            },
-            {
-              inlineData: {
-                mimeType: mimeType || 'image/jpeg',
-                data: buffer.toString('base64')
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0,
-          maxOutputTokens: 2048
-        }
-      })
+      body: requestBody
+    });
+    logGeminiOCR('response-received', {
+      elapsedMs: Date.now() - requestStartedAt,
+      status: response.status,
+      ok: response.ok
     });
 
     if (!response.ok) {
       const details = await response.text();
+      logGeminiOCR('response-error', {
+        elapsedMs: Date.now() - requestStartedAt,
+        status: response.status,
+        details: details.slice(0, 1000)
+      });
       throw new Error(`Gemini OCR failed (${response.status}): ${details.slice(0, 300)}`);
     }
 
@@ -186,8 +242,20 @@ async function performGeminiOCR({ buffer, mimeType }, timeoutMs = GEMINI_OCR_TIM
       words: text.split(/\s+/).filter(Boolean).map((w) => ({ text: w, confidence: 88, bbox: null })),
       engine: 'gemini'
     };
+  } catch (error) {
+    console.error('[gemini-ocr] request-failed', JSON.stringify({
+      timestamp: new Date().toISOString(),
+      elapsedMs: Date.now() - requestStartedAt,
+      aborted: controller.signal.aborted,
+      error: errorDetails(error)
+    }));
+    throw error;
   } finally {
     clearTimeout(timeout);
+    logGeminiOCR('request-finished', {
+      elapsedMs: Date.now() - requestStartedAt,
+      aborted: controller.signal.aborted
+    });
   }
 }
 
