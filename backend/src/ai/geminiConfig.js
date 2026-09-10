@@ -1,13 +1,12 @@
 /**
  * Shared Gemini model resolution.
- * Older env values (2.0 / 2.5) are remapped so Vercel deploys keep working
- * until GEMINI_MODEL is updated in the dashboard.
+ * Retired model values are remapped to the stable OCR default so existing
+ * deployments continue to work after a model shutdown.
  */
-const DEFAULT_MODEL = 'gemini-3.6-flash';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 const RETIRED_MODEL_PATTERNS = [
   /^gemini-2\.0-/i,
-  /^gemini-2\.5-/i,
   /^gemini-1\.5-/i,
   /^gemini-pro$/i,
   /^gemini-flash$/i

@@ -69,6 +69,21 @@ function errorDetails(error) {
   };
 }
 
+function ocrUnavailableMessage(errors, error) {
+  const combined = `${errors.join(' ')} ${error?.message || ''}`;
+
+  if (/\b(?:401|403)\b|API key|permission/i.test(combined)) {
+    return 'The label-reading service is not configured correctly. Please ask the administrator to check the Gemini API key and then redeploy.';
+  }
+  if (/\b429\b|quota|rate limit|resource exhausted/i.test(combined)) {
+    return 'The label-reading service has reached its request limit. Please try again in a few minutes.';
+  }
+  if (/timed out|AbortError|fetch failed|network/i.test(combined)) {
+    return 'The label-reading service is temporarily unavailable. Please try again in a moment.';
+  }
+  return 'We could not reach the label-reading service right now. Please try again shortly.';
+}
+
 function logGeminiOCR(event, details = {}) {
   console.info(`[gemini-ocr] ${event}`, JSON.stringify({
     timestamp: new Date().toISOString(),
@@ -433,7 +448,9 @@ export async function performOCR(imageSource) {
       ? `${error.message} (also: ${errors.join('; ')})`
       : error.message;
     if (!SHOULD_USE_TESSERACT) {
-      throw new Error("We couldn't process this label right now. Please try again with a clear image.");
+      // Vercel deliberately does not run Tesseract. Do not blame the uploaded
+      // image when the external OCR provider is unavailable.
+      throw new Error(ocrUnavailableMessage(errors, error));
     }
     throw new Error(`OCR processing failed: ${detail}`);
   } finally {
