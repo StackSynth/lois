@@ -1,4 +1,4 @@
-import { resolveGeminiModel, geminiGenerateUrl } from './geminiConfig.js';
+import { resolveGeminiModel, geminiGenerateUrl, getGeminiRateLimitHeaders } from './geminiConfig.js';
 
 const MODEL = resolveGeminiModel();
 const REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 6000);
@@ -16,6 +16,7 @@ const EMPTY_EXPLANATION = {
   source: 'fallback'
 };
 
+const RATE_LIMIT_RETRY_DELAYS_MS = [2000, 5000];
 function cleanJson(text) {
   const withoutFence = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
   const start = withoutFence.indexOf('{');
@@ -157,30 +158,48 @@ async function callGemini({ product, extractedFields, ruleResults }) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  let timeout;
-  try {
-    const controller = new AbortController();
-    timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    const response = await fetch(geminiGenerateUrl(MODEL, apiKey), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: buildPrompt({ product, extractedFields, ruleResults }) }] }],
-        generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
-      })
-    });
-    if (!response.ok) {
-      const details = await response.text();
-      throw new Error(`Gemini request failed (${response.status}): ${details.slice(0, 300)}`);
-    }
+  for (let attempt = 0; attempt <= RATE_LIMIT_RETRY_DELAYS_MS.length; attempt += 1) {
+    let timeout;
+    try {
+      const controller = new AbortController();
+      timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      const response = await fetch(geminiGenerateUrl(MODEL, apiKey), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: buildPrompt({ product, extractedFields, ruleResults }) }] }],
+          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+        })
+      });
+      if (!response.ok) {
+        const details = await response.text();
+        const rateLimitHeaders = response.status === 429 ? getGeminiRateLimitHeaders(response) : {};
+        if (response.status === 429) {
+          console.warn('[gemini-explanation] rate-limit-response', JSON.stringify({
+            attempt: attempt + 1,
+            status: response.status,
+            headers: rateLimitHeaders,
+            details: details.slice(0, 1000)
+          }));
+        }
+        const error = new Error(`Gemini request failed (${response.status}): ${details.slice(0, 300)}`);
+        error.status = response.status;
+        throw error;
+      }
 
-    const payload = await response.json();
-    const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Gemini returned an empty response');
-    return normalizeExplanation(cleanJson(text), 'gemini');
-  } finally {
-    clearTimeout(timeout);
+      const payload = await response.json();
+      const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('Gemini returned an empty response');
+      return normalizeExplanation(cleanJson(text), 'gemini');
+    } catch (error) {
+      if (error.status !== 429 || attempt === RATE_LIMIT_RETRY_DELAYS_MS.length) throw error;
+      const delayMs = RATE_LIMIT_RETRY_DELAYS_MS[attempt];
+      console.warn(`[gemini-explanation] retrying after 429 in ${delayMs}ms`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 }
 

@@ -7,7 +7,7 @@ import path from 'path';
 import os from 'os';
 import { createHash } from 'crypto';
 import sharp from 'sharp';
-import { resolveGeminiModel, geminiGenerateUrl } from '../ai/geminiConfig.js';
+import { resolveGeminiModel, geminiGenerateUrl, getGeminiRateLimitHeaders } from '../ai/geminiConfig.js';
 
 // Vercel function maxDuration is 60s — leave room for AI explanation after OCR.
 const OCR_TIMEOUT_MS = Number(process.env.OCR_TIMEOUT_MS || 30000);
@@ -76,7 +76,7 @@ function ocrUnavailableMessage(errors, error) {
     return 'The label-reading service is not configured correctly. Please ask the administrator to check the Gemini API key and then redeploy.';
   }
   if (/\b429\b|quota|rate limit|resource exhausted/i.test(combined)) {
-    return 'The label-reading service has reached its request limit. Please try again in a few minutes.';
+    return 'Our AI service is temporarily busy. Please try again in a minute.';
   }
   if (/timed out|AbortError|fetch failed|network/i.test(combined)) {
     return 'The label-reading service is temporarily unavailable. Please try again in a moment.';
@@ -122,7 +122,9 @@ async function runGeminiOCRWithRetries(prepared, started, errors) {
       if (!isRetryableGeminiError(error) || attempt === maxAttempts) return null;
 
       const retryDelayMs = Math.min(
-        GEMINI_RETRY_BASE_DELAY_MS * (2 ** (attempt - 1)),
+        error.status === 429
+          ? (attempt === 1 ? GEMINI_RETRY_BASE_DELAY_MS : GEMINI_RETRY_MAX_DELAY_MS)
+          : GEMINI_RETRY_BASE_DELAY_MS * (2 ** (attempt - 1)),
         GEMINI_RETRY_MAX_DELAY_MS,
         Math.max(0, GEMINI_OCR_TOTAL_TIMEOUT_MS - (Date.now() - started))
       );
@@ -131,7 +133,6 @@ async function runGeminiOCRWithRetries(prepared, started, errors) {
       await wait(retryDelayMs);
     }
   }
-
   return null;
 }
 
@@ -266,7 +267,7 @@ async function performGeminiOCR({ buffer, mimeType }, timeoutMs = GEMINI_OCR_TIM
     throw new Error(`Image still too large for Gemini OCR (${Math.round(buffer.length / 1024 / 1024)}MB)`);
   }
 
-  const imageBase64 = buffer.toString('base64');
+        return 'Our AI service is temporarily busy. Please try again in a minute.';
   const decodedImage = Buffer.from(imageBase64, 'base64');
   if (decodedImage.length !== buffer.length || !decodedImage.equals(buffer)) {
     throw new Error('Gemini OCR image base64 validation failed');
@@ -334,13 +335,23 @@ Use null for unreadable fields. raw_text must contain all readable label text wi
 
     if (!response.ok) {
       const details = await response.text();
+      const rateLimitHeaders = response.status === 429 ? getGeminiRateLimitHeaders(response) : {};
+      if (response.status === 429) {
+        console.warn('[gemini-ocr] rate-limit-response', JSON.stringify({
+          status: response.status,
+          headers: rateLimitHeaders,
+          details: details.slice(0, 1000)
+        }));
+      }
       logGeminiOCR('response-error', {
         elapsedMs: Date.now() - requestStartedAt,
         status: response.status,
+        rateLimitHeaders,
         details: details.slice(0, 1000)
       });
       const error = new Error(`Gemini OCR failed (${response.status}): ${details.slice(0, 300)}`);
       error.status = response.status;
+      error.rateLimitHeaders = rateLimitHeaders;
       throw error;
     }
 
