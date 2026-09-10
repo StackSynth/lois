@@ -3,17 +3,19 @@
  */
 import { Router } from 'express';
 import multer from 'multer';
+import { mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { scanImage, ocrOnly, validateFields, getScans, getScanById, runDemo } from '../controllers/scanController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const uploadDir = join(__dirname, '..', '..', 'uploads');
+mkdirSync(uploadDir, { recursive: true });
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = join(__dirname, '..', '..', 'uploads');
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
