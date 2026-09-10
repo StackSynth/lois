@@ -138,15 +138,16 @@ function calculateConfidence(text, match, patternIndex) {
  * @param {string} ocrText - Raw text from OCR
  * @returns {Array<ExtractedField>} - Array of extracted fields
  */
-export function extractFields(ocrText) {
+export function extractFields(ocrText, structured = null) {
   if (!ocrText || typeof ocrText !== 'string') {
-    return Object.entries(FIELD_PATTERNS).map(([field, config]) => ({
+    const emptyFields = Object.entries(FIELD_PATTERNS).map(([field, config]) => ({
       field,
       label: config.label,
       value: null,
       confidence: 0,
       status: 'not_found'
     }));
+    return applyStructuredFields(emptyFields, structured);
   }
 
   const results = [];
@@ -183,7 +184,39 @@ export function extractFields(ocrText) {
     }
   }
 
-  return results;
+  return applyStructuredFields(results, structured);
+}
+
+function applyStructuredFields(fields, structured) {
+  if (!structured || typeof structured !== 'object') return fields;
+
+  const structuredFieldMap = {
+    productName: 'product_name',
+    mrp: 'mrp',
+    netQuantity: 'net_quantity',
+    manufacturer: 'manufacturer_name',
+    address: 'manufacturer_address',
+    dateOfManufacture: 'packed_date',
+    consumerCare: 'consumer_care'
+  };
+  const structuredConfidence = Number.isFinite(Number(structured.confidence))
+    ? Math.max(0, Math.min(99, Number(structured.confidence)))
+    : 88;
+
+  return fields.map((field) => {
+    if (field.value) return field;
+    const structuredKey = structuredFieldMap[field.field];
+    const value = structuredKey ? structured[structuredKey] : null;
+    if (value === null || value === undefined || String(value).trim() === '') return field;
+
+    const normalizedValue = String(value).trim();
+    return {
+      ...field,
+      value: normalizedValue,
+      confidence: structuredConfidence,
+      status: structuredConfidence >= 70 ? 'found' : 'low_confidence'
+    };
+  });
 }
 
 /**

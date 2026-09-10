@@ -267,7 +267,6 @@ async function performGeminiOCR({ buffer, mimeType }, timeoutMs = GEMINI_OCR_TIM
     throw new Error(`Image still too large for Gemini OCR (${Math.round(buffer.length / 1024 / 1024)}MB)`);
   }
 
-        return 'Our AI service is temporarily busy. Please try again in a minute.';
   const decodedImage = Buffer.from(imageBase64, 'base64');
   if (decodedImage.length !== buffer.length || !decodedImage.equals(buffer)) {
     throw new Error('Gemini OCR image base64 validation failed');

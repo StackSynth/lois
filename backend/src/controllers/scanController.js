@@ -29,7 +29,7 @@ export async function scanImage(req, res, next) {
     console.log(`[scan ${scanId}] OCR done in ${Date.now() - startedAt}ms (engine=${ocrResult.engine || 'unknown'})`);
 
     // Step 2: Extract fields
-    const extractedFields = extractFields(ocrResult.text);
+    const extractedFields = extractFields(ocrResult.text, ocrResult.structured);
 
     // Step 3: Detect product category
     const category = detectProductCategory(ocrResult.text);
@@ -93,7 +93,7 @@ export async function ocrOnly(req, res, next) {
     }
 
     const ocrResult = await performOCR(req.file.path);
-    const extractedFields = extractFields(ocrResult.text);
+    const extractedFields = extractFields(ocrResult.text, ocrResult.structured);
 
     res.json({
       success: true,
