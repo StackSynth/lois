@@ -56,4 +56,11 @@ export async function getScan(id) {
   return api.get(`/scans/${id}`);
 }
 
+/**
+ * Store the generated PDF alongside a scan history record.
+ */
+export async function saveScanPdf(id, pdfData) {
+  return api.post(`/scans/${id}/pdf`, { pdfData });
+}
+
 export default api;

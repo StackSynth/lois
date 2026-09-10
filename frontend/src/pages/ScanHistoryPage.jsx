@@ -26,6 +26,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import HistoryIcon from '@mui/icons-material/History';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import DownloadIcon from '@mui/icons-material/Download';
 
 const STATUS_CHIP = {
   COMPLIANT: { label: 'Compliant', color: 'success' },
@@ -158,6 +159,13 @@ export default function ScanHistoryPage() {
                           <VisibilityIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
+                      {scan.pdfData && (
+                        <Tooltip title="Download PDF">
+                          <IconButton size="small" component="a" href={scan.pdfData} download={`Jarvis_Compliance_Report_${scan.productName || 'Product'}.pdf`} onClick={(e) => e.stopPropagation()}>
+                            <DownloadIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

@@ -159,6 +159,24 @@ export function getScanById(req, res) {
 }
 
 /**
+ * POST /api/scans/:id/pdf — Store the generated compliance report PDF.
+ */
+export function saveScanPdf(req, res) {
+  const { pdfData } = req.body;
+
+  if (typeof pdfData !== 'string' || !pdfData.startsWith('data:application/pdf')) {
+    return res.status(400).json({ error: { message: 'A PDF data URL is required' } });
+  }
+
+  const scan = scanStore.update(req.params.id, { pdfData });
+  if (!scan) {
+    return res.status(404).json({ error: { message: 'Scan not found' } });
+  }
+
+  res.json({ success: true, data: scan });
+}
+
+/**
  * POST /api/demo/:demoId — Run demo product pipeline (bypasses OCR)
  */
 export async function runDemo(req, res, next) {

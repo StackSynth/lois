@@ -6,7 +6,7 @@ import multer from 'multer';
 import { mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { scanImage, ocrOnly, validateFields, getScans, getScanById, runDemo } from '../controllers/scanController.js';
+import { scanImage, ocrOnly, validateFields, getScans, getScanById, saveScanPdf, runDemo } from '../controllers/scanController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -61,6 +61,9 @@ router.get('/scans', getScans);
 
 // Get single scan
 router.get('/scans/:id', getScanById);
+
+// Store the browser-generated PDF with its scan history record
+router.post('/scans/:id/pdf', saveScanPdf);
 
 // Demo endpoints
 router.post('/demo/:demoId', runDemo);

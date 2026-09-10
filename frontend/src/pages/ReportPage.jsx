@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
-import { getScan } from '../services/api';
+import { getScan, saveScanPdf } from '../services/api';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -78,7 +78,7 @@ function pdfSafe(value) {
   return String(value ?? 'Not provided').replace(/[^\x00-\x7F]/g, '?');
 }
 
-function createCompliancePdf(scan) {
+function createCompliancePdf(scan, { download = true } = {}) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -224,7 +224,11 @@ function createCompliancePdf(scan) {
     doc.text(`Page ${page} of ${pageCount}`, pageWidth - margin - 22, pageHeight - 6);
   }
 
-  doc.save(`Jarvis_Compliance_Report_${safeProductName}_${fileDate}.pdf`);
+  const pdfData = doc.output('datauristring');
+  if (download) {
+    doc.save(`Jarvis_Compliance_Report_${safeProductName}_${fileDate}.pdf`);
+  }
+  return pdfData;
 }
 
 export default function ReportPage() {
@@ -273,6 +277,24 @@ export default function ReportPage() {
     };
     fetchScan();
   }, [scanId, navigationScan]);
+
+  useEffect(() => {
+    if (!scan || scan.pdfData) return;
+
+    const persistPdf = async () => {
+      try {
+        const pdfData = createCompliancePdf(scan, { download: false });
+        const result = await saveScanPdf(scan.id, pdfData);
+        if (result?.data?.pdfData) {
+          setScan((current) => ({ ...current, pdfData: result.data.pdfData }));
+        }
+      } catch (pdfError) {
+        console.error('Failed to store compliance PDF:', pdfError);
+      }
+    };
+
+    persistPdf();
+  }, [scan]);
 
   useEffect(() => {
     if (!loading && scan && location.state?.focusAi) {

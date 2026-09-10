@@ -34,6 +34,7 @@
  * @property {string} productName - Detected product name
  * @property {string} timestamp - ISO timestamp
  * @property {string|null} imageUrl - Path to uploaded image
+ * @property {string|null} pdfData - Generated compliance report as a data URL
  * @property {Object} ocrResult - Raw OCR output
  * @property {string} ocrResult.text - Full OCR text
  * @property {number} ocrResult.confidence - Overall OCR confidence
@@ -57,6 +58,7 @@ export function createScan(data) {
     productName: data.productName || 'Unknown Product',
     timestamp: data.timestamp || new Date().toISOString(),
     imageUrl: data.imageUrl || null,
+    pdfData: data.pdfData || null,
     ocrResult: data.ocrResult || { text: '', confidence: 0 },
     extractedFields: data.extractedFields || [],
     ruleResults: data.ruleResults || [],
