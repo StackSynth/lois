@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { jsPDF } from 'jspdf';
 import { getScan, saveScanPdf } from '../services/api';
 import Container from '@mui/material/Container';
@@ -53,20 +55,23 @@ function StatusChip({ status }) {
   return <Chip label={cfg.label} color={cfg.color} size="small" icon={cfg.icon} />;
 }
 
-function ScoreCircle({ score, size = 160 }) {
+function ScoreCircle({ score, size = 160, mobileSize = 120 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const resolvedSize = isMobile ? mobileSize : size;
   const getColor = () => score >= 85 ? 'success.main' : score >= 50 ? 'warning.main' : 'error.main';
   const getLabel = () => score >= 85 ? 'Compliant' : score >= 50 ? 'Needs Attention' : 'Non-Compliant';
 
   return (
     <Box sx={{ position: 'relative', display: 'inline-flex' }}>
       {/* Background */}
-      <CircularProgress variant="determinate" value={100} size={size} thickness={3}
+      <CircularProgress variant="determinate" value={100} size={resolvedSize} thickness={3}
         sx={{ color: 'action.hover', position: 'absolute' }} />
       {/* Foreground */}
-      <CircularProgress variant="determinate" value={score} size={size} thickness={3}
+      <CircularProgress variant="determinate" value={score} size={resolvedSize} thickness={3}
         sx={{ color: getColor(), '& .MuiCircularProgress-circle': { strokeLinecap: 'round', transition: 'stroke-dashoffset 1.5s cubic-bezier(0.34,1.56,0.64,1)' } }} />
       <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h2" sx={{ fontWeight: 800, lineHeight: 1, color: getColor() }}>{score}</Typography>
+        <Typography variant={isMobile ? 'h3' : 'h2'} sx={{ fontWeight: 800, lineHeight: 1, color: getColor() }}>{score}</Typography>
         <Typography variant="caption" color="text.secondary">/ 100</Typography>
         <Chip label={getLabel()} color={score >= 85 ? 'success' : score >= 50 ? 'warning' : 'error'} size="small" sx={{ mt: 1 }} />
       </Box>
@@ -234,6 +239,9 @@ function createCompliancePdf(scan, { download = true } = {}) {
 export default function ReportPage() {
   const { scanId } = useParams();
   const location = useLocation();
+  const rpTheme = useTheme();
+  const isMobile = useMediaQuery(rpTheme.breakpoints.down('md'));
+  const isSmall = useMediaQuery(rpTheme.breakpoints.down('sm'));
   const navigationScan = location.state?.scan?.id === scanId ? location.state.scan : null;
   const [scan, setScan] = useState(navigationScan);
   const [loading, setLoading] = useState(!navigationScan);
@@ -364,7 +372,7 @@ export default function ReportPage() {
   };
 
   return (
-    <Container className="jarvis-report" maxWidth="lg" sx={{ py: 4 }}>
+    <Container className="jarvis-report" maxWidth="lg" sx={{ py: { xs: 2, md: 4 }, px: { xs: 2, md: 3 } }}>
       {/* Demo Banner */}
       {scan.isDemo && (
         <Alert severity="warning" icon={<ScienceIcon />} sx={{ mb: 3 }}>
@@ -374,26 +382,40 @@ export default function ReportPage() {
       )}
 
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, mb: { xs: 3, md: 4 }, gap: 2 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Compliance Report</Typography>
-          <Typography variant="h6" color="primary.main" fontWeight={600}>{scan.productName}</Typography>
+          <Typography variant={isSmall ? 'h5' : 'h4'} fontWeight={700}>Compliance Report</Typography>
+          <Typography variant={isSmall ? 'body1' : 'h6'} color="primary.main" fontWeight={600} noWrap sx={{ maxWidth: { xs: 280, sm: 'none' } }}>{scan.productName}</Typography>
           <Typography variant="caption" color="text.secondary">Scanned on {new Date(scan.timestamp).toLocaleString()}</Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" startIcon={<QrCodeScannerIcon />} component={Link} to="/scan">Scan Another</Button>
-          <Button variant="contained" startIcon={isGeneratingPdf ? <CircularProgress size={18} color="inherit" /> : <DownloadIcon />} onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
-            {isGeneratingPdf ? 'Generating report...' : 'Download PDF'}
-          </Button>
-          <Button variant="outlined" startIcon={<PrintIcon />} onClick={() => window.print()}>Print</Button>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
+          {isSmall ? (
+            <>
+              <Button variant="contained" fullWidth startIcon={isGeneratingPdf ? <CircularProgress size={18} color="inherit" /> : <DownloadIcon />} onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
+                {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
+              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button variant="outlined" size="small" startIcon={<QrCodeScannerIcon />} component={Link} to="/scan" sx={{ flex: 1 }}>Scan Another</Button>
+                <Button variant="outlined" size="small" startIcon={<PrintIcon />} onClick={() => window.print()} sx={{ flex: 1 }}>Print</Button>
+              </Box>
+            </>
+          ) : (
+            <>
+              <Button variant="outlined" startIcon={<QrCodeScannerIcon />} component={Link} to="/scan">Scan Another</Button>
+              <Button variant="contained" startIcon={isGeneratingPdf ? <CircularProgress size={18} color="inherit" /> : <DownloadIcon />} onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
+                {isGeneratingPdf ? 'Generating report...' : 'Download PDF'}
+              </Button>
+              <Button variant="outlined" startIcon={<PrintIcon />} onClick={() => window.print()}>Print</Button>
+            </>
+          )}
         </Box>
       </Box>
 
       {/* Score Section */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 6, py: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <Card sx={{ mb: { xs: 3, md: 4 } }}>
+        <CardContent sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', gap: { xs: 3, md: 6 }, py: { xs: 3, md: 4 }, flexWrap: 'wrap', justifyContent: 'center' }}>
           <ScoreCircle score={scan.complianceScore} />
-          <Grid container spacing={2} sx={{ maxWidth: 400 }}>
+          <Grid container spacing={1.5} sx={{ maxWidth: { xs: '100%', sm: 400 } }}>
             {[
               { label: 'Compliant', value: scan.summary?.compliant || 0, color: 'success' },
               { label: 'Needs Review', value: scan.summary?.review || 0, color: 'warning' },
@@ -401,9 +423,9 @@ export default function ReportPage() {
               { label: 'Not Applicable', value: scan.summary?.notApplicable || 0, color: 'default' },
             ].map(card => (
               <Grid item xs={6} key={card.label}>
-                <Paper sx={{ p: 2, textAlign: 'center', bgcolor: card.color !== 'default' ? `${card.color}.light` : 'action.hover' }}>
-                  <Typography variant="h4" fontWeight={800} color={card.color !== 'default' ? `${card.color}.main` : 'text.secondary'}>{card.value}</Typography>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>{card.label}</Typography>
+                <Paper sx={{ p: { xs: 1.5, md: 2 }, textAlign: 'center', bgcolor: card.color !== 'default' ? `${card.color}.light` : 'action.hover' }}>
+                  <Typography variant={isSmall ? 'h5' : 'h4'} fontWeight={800} color={card.color !== 'default' ? `${card.color}.main` : 'text.secondary'}>{card.value}</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>{card.label}</Typography>
                 </Paper>
               </Grid>
             ))}
@@ -458,82 +480,136 @@ export default function ReportPage() {
         ))}
       </Grid>
 
-      {/* Compliance Table */}
-      <Typography variant="h6" sx={{ mb: 2 }}>⚖️ Declaration Verification</Typography>
-      <TableContainer component={Paper} sx={{ mb: 4 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Requirement</TableCell>
-              <TableCell>Extracted Value</TableCell>
-              <TableCell>Result</TableCell>
-              <TableCell align="center">Confidence</TableCell>
-              <TableCell>Rule Reference</TableCell>
-              <TableCell align="center">Details</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {scan.ruleResults?.map(rule => (
-              <React.Fragment key={rule.ruleId}>
-                <TableRow hover sx={{ cursor: 'pointer' }} onClick={() => toggleRule(rule.ruleId)}>
-                  <TableCell><Typography variant="body2" fontWeight={500}>{rule.description}</Typography></TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{rule.extractedValue || <Typography component="span" color="text.secondary" fontStyle="italic" variant="body2">Not detected</Typography>}</Typography>
-                  </TableCell>
-                  <TableCell><StatusChip status={rule.status} /></TableCell>
-                  <TableCell align="center">
-                    {rule.confidence != null ? (
-                      <Chip label={`${rule.confidence}%`} size="small" color={confColor(rule.confidence)} variant="outlined" sx={{ fontSize: '0.7rem' }} />
-                    ) : '—'}
-                  </TableCell>
-                  <TableCell><Typography variant="caption" color="text.secondary">{rule.reference}</Typography></TableCell>
-                  <TableCell align="center">
-                    <ExpandMoreIcon fontSize="small" sx={{ transform: expandedRules.has(rule.ruleId) ? 'rotate(180deg)' : 'none', transition: '0.2s', color: 'text.secondary' }} />
-                  </TableCell>
-                </TableRow>
-                {expandedRules.has(rule.ruleId) && (
-                  <TableRow>
-                    <TableCell colSpan={6} sx={{ p: 0 }}>
-                      <Box sx={{ p: 3, bgcolor: 'action.hover' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                          <SmartToyIcon fontSize="small" color="primary" />
-                          <Typography variant="subtitle2" color="primary.main">AI-Assisted Analysis</Typography>
-                        </Box>
-                        {(() => {
-                          const aiIssue = getAiIssueForRule(rule);
-                          return (
-                            <>
-                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                {aiIssue?.reason || rule.explanation?.summary}
-                              </Typography>
-                              {aiIssue?.recommendation && (
-                                <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
-                                  <Typography variant="body2"><strong>AI recommendation:</strong> {aiIssue.recommendation}</Typography>
-                                </Alert>
-                              )}
-                              {!aiIssue && rule.explanation?.detail && (
-                                <Alert severity="info" variant="outlined" sx={{ mb: 1 }}>
-                                  <Typography variant="body2"><strong>Why it matters:</strong> {rule.explanation.detail}</Typography>
-                                </Alert>
-                              )}
-                              {!aiIssue && rule.explanation?.suggestion && rule.status !== 'COMPLIANT' && (
-                                <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
-                                  <Typography variant="body2"><strong>Suggested action:</strong> {rule.explanation.suggestion}</Typography>
-                                </Alert>
-                              )}
-                            </>
-                          );
-                        })()}
-                        <Chip label={`📜 ${rule.reference}`} size="small" variant="outlined" sx={{ mt: 1 }} />
+      {/* Compliance Table / Mobile Cards */}
+      <Typography variant={isSmall ? 'subtitle1' : 'h6'} sx={{ mb: 2 }}>⚖️ Declaration Verification</Typography>
+      {isMobile ? (
+        /* Mobile: Expandable Card Layout */
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 4 }}>
+          {scan.ruleResults?.map(rule => {
+            const aiIssue = getAiIssueForRule(rule);
+            const isExpanded = expandedRules.has(rule.ruleId);
+            return (
+              <Card key={rule.ruleId} onClick={() => toggleRule(rule.ruleId)} sx={{ cursor: 'pointer' }}>
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Typography variant="body2" fontWeight={600} sx={{ flex: 1, mr: 1 }}>{rule.description}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <StatusChip status={rule.status} />
+                      <ExpandMoreIcon fontSize="small" sx={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: '0.2s', color: 'text.secondary' }} />
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, mr: 1 }}>
+                      {rule.extractedValue || 'Not detected'}
+                    </Typography>
+                    {rule.confidence != null && (
+                      <Chip label={`${rule.confidence}%`} size="small" color={confColor(rule.confidence)} variant="outlined" sx={{ fontSize: '0.65rem', height: 20 }} />
+                    )}
+                  </Box>
+                  {isExpanded && (
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <SmartToyIcon fontSize="small" color="primary" />
+                        <Typography variant="caption" color="primary.main" fontWeight={700}>AI Analysis</Typography>
                       </Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        {aiIssue?.reason || rule.explanation?.summary}
+                      </Typography>
+                      {aiIssue?.recommendation && (
+                        <Alert severity="warning" variant="outlined" sx={{ mb: 1, '& .MuiAlert-message': { py: 0.5 } }}>
+                          <Typography variant="caption"><strong>AI recommendation:</strong> {aiIssue.recommendation}</Typography>
+                        </Alert>
+                      )}
+                      {!aiIssue && rule.explanation?.suggestion && rule.status !== 'COMPLIANT' && (
+                        <Alert severity="warning" variant="outlined" sx={{ mb: 1, '& .MuiAlert-message': { py: 0.5 } }}>
+                          <Typography variant="caption"><strong>Suggested action:</strong> {rule.explanation.suggestion}</Typography>
+                        </Alert>
+                      )}
+                      <Chip label={`📜 ${rule.reference}`} size="small" variant="outlined" sx={{ mt: 0.5 }} />
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Box>
+      ) : (
+        /* Desktop: Full Table */
+        <TableContainer component={Paper} sx={{ mb: 4 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Requirement</TableCell>
+                <TableCell>Extracted Value</TableCell>
+                <TableCell>Result</TableCell>
+                <TableCell align="center">Confidence</TableCell>
+                <TableCell>Rule Reference</TableCell>
+                <TableCell align="center">Details</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {scan.ruleResults?.map(rule => (
+                <React.Fragment key={rule.ruleId}>
+                  <TableRow hover sx={{ cursor: 'pointer' }} onClick={() => toggleRule(rule.ruleId)}>
+                    <TableCell><Typography variant="body2" fontWeight={500}>{rule.description}</Typography></TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{rule.extractedValue || <Typography component="span" color="text.secondary" fontStyle="italic" variant="body2">Not detected</Typography>}</Typography>
+                    </TableCell>
+                    <TableCell><StatusChip status={rule.status} /></TableCell>
+                    <TableCell align="center">
+                      {rule.confidence != null ? (
+                        <Chip label={`${rule.confidence}%`} size="small" color={confColor(rule.confidence)} variant="outlined" sx={{ fontSize: '0.7rem' }} />
+                      ) : '—'}
+                    </TableCell>
+                    <TableCell><Typography variant="caption" color="text.secondary">{rule.reference}</Typography></TableCell>
+                    <TableCell align="center">
+                      <ExpandMoreIcon fontSize="small" sx={{ transform: expandedRules.has(rule.ruleId) ? 'rotate(180deg)' : 'none', transition: '0.2s', color: 'text.secondary' }} />
                     </TableCell>
                   </TableRow>
-                )}
-              </React.Fragment>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                  {expandedRules.has(rule.ruleId) && (
+                    <TableRow>
+                      <TableCell colSpan={6} sx={{ p: 0 }}>
+                        <Box sx={{ p: 3, bgcolor: 'action.hover' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <SmartToyIcon fontSize="small" color="primary" />
+                            <Typography variant="subtitle2" color="primary.main">AI-Assisted Analysis</Typography>
+                          </Box>
+                          {(() => {
+                            const aiIssue = getAiIssueForRule(rule);
+                            return (
+                              <>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                  {aiIssue?.reason || rule.explanation?.summary}
+                                </Typography>
+                                {aiIssue?.recommendation && (
+                                  <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
+                                    <Typography variant="body2"><strong>AI recommendation:</strong> {aiIssue.recommendation}</Typography>
+                                  </Alert>
+                                )}
+                                {!aiIssue && rule.explanation?.detail && (
+                                  <Alert severity="info" variant="outlined" sx={{ mb: 1 }}>
+                                    <Typography variant="body2"><strong>Why it matters:</strong> {rule.explanation.detail}</Typography>
+                                  </Alert>
+                                )}
+                                {!aiIssue && rule.explanation?.suggestion && rule.status !== 'COMPLIANT' && (
+                                  <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
+                                    <Typography variant="body2"><strong>Suggested action:</strong> {rule.explanation.suggestion}</Typography>
+                                  </Alert>
+                                )}
+                              </>
+                            );
+                          })()}
+                          <Chip label={`📜 ${rule.reference}`} size="small" variant="outlined" sx={{ mt: 1 }} />
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {/* Issues Requiring Attention */}
       {issueRules.length > 0 && (
@@ -564,15 +640,15 @@ export default function ReportPage() {
       {/* AI Explanation */}
       <Accordion defaultExpanded sx={{ mb: 4 }} id="ai-assisted-explanation">
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <SmartToyIcon color="primary" />
-            <Typography variant="h6">AI-Assisted Explanation</Typography>
+            <Typography variant={isSmall ? 'subtitle1' : 'h6'}>AI-Assisted Explanation</Typography>
             <Chip
               label={scan.aiExplanation?.source === 'gemini' ? 'Gemini' : 'AI analysis'}
               size="small"
               variant="outlined"
               color="primary"
-              sx={{ ml: 1 }}
+              sx={{ ml: { xs: 0, sm: 1 } }}
             />
           </Box>
         </AccordionSummary>

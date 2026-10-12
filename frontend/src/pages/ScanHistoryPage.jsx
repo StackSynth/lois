@@ -22,11 +22,14 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import InputAdornment from '@mui/material/InputAdornment';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import HistoryIcon from '@mui/icons-material/History';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import DownloadIcon from '@mui/icons-material/Download';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const STATUS_CHIP = {
   COMPLIANT: { label: 'Compliant', color: 'success' },
@@ -36,6 +39,8 @@ const STATUS_CHIP = {
 
 export default function ScanHistoryPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -85,19 +90,26 @@ export default function ScanHistoryPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 }, px: { xs: 2, md: 3 } }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-        <HistoryIcon color="primary" sx={{ fontSize: 32 }} />
-        <Typography variant="h4" fontWeight={700}>Scan History</Typography>
+        <HistoryIcon color="primary" sx={{ fontSize: { xs: 26, md: 32 } }} />
+        <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight={700}>Scan History</Typography>
       </Box>
-      <Typography variant="subtitle1" sx={{ mb: 3 }}>Browse and filter all past compliance scans</Typography>
+      <Typography variant={isMobile ? 'body2' : 'subtitle1'} sx={{ mb: 3 }}>Browse and filter all past compliance scans</Typography>
 
-      {/* Tabs */}
-      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+      {/* Tabs — scrollable on mobile */}
+      <Tabs
+        value={tab}
+        onChange={(e, v) => setTab(v)}
+        variant={isMobile ? 'scrollable' : 'standard'}
+        scrollButtons={isMobile ? 'auto' : false}
+        allowScrollButtonsMobile
+        sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+      >
         <Tab label={`All (${scans.length})`} />
         <Tab label={`Compliant (${scans.filter(s => s.overallStatus === 'COMPLIANT').length})`} />
         <Tab label={`Review (${scans.filter(s => s.overallStatus === 'NEEDS_ATTENTION').length})`} />
-        <Tab label={`Non-Compliant (${scans.filter(s => s.overallStatus === 'NON_COMPLIANT').length})`} />
+        <Tab label={`Non-Comp. (${scans.filter(s => s.overallStatus === 'NON_COMPLIANT').length})`} />
       </Tabs>
 
       {/* Search */}
@@ -111,11 +123,11 @@ export default function ScanHistoryPage() {
         InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
       />
 
-      {/* Table */}
+      {/* Content */}
       {filteredScans.length === 0 ? (
         <Card>
-          <CardContent sx={{ textAlign: 'center', py: 8 }}>
-            <HistoryIcon sx={{ fontSize: 56, color: 'text.secondary', mb: 2, opacity: 0.4 }} />
+          <CardContent sx={{ textAlign: 'center', py: { xs: 5, md: 8 } }}>
+            <HistoryIcon sx={{ fontSize: { xs: 40, md: 56 }, color: 'text.secondary', mb: 2, opacity: 0.4 }} />
             <Typography variant="h6" color="text.secondary">{scans.length === 0 ? 'No scan history' : 'No matching scans'}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {scans.length === 0 ? 'Scan a product label or try a demo to build your history.' : 'Try adjusting your search or filter.'}
@@ -125,7 +137,62 @@ export default function ScanHistoryPage() {
             )}
           </CardContent>
         </Card>
+      ) : isMobile ? (
+        /* Mobile Card Layout */
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {filteredScans.map(scan => {
+            const mfr = scan.extractedFields?.find(f => f.field === 'manufacturer')?.value || '—';
+            const chipCfg = STATUS_CHIP[scan.overallStatus] || { label: scan.overallStatus, color: 'default' };
+            return (
+              <Card
+                key={scan.id}
+                onClick={() => navigate(`/report/${scan.id}`)}
+                sx={{ cursor: 'pointer', '&:active': { transform: 'scale(0.98)' }, transition: 'transform 0.15s ease' }}
+              >
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Box sx={{ minWidth: 0, flex: 1, mr: 1 }}>
+                      <Typography variant="body2" fontWeight={700} noWrap>{scan.productName}</Typography>
+                      <Typography variant="caption" color="text.secondary" noWrap>{mfr}</Typography>
+                    </Box>
+                    <Typography
+                      variant="h6"
+                      fontWeight={800}
+                      sx={{ color: scan.complianceScore >= 85 ? 'success.main' : scan.complianceScore >= 50 ? 'warning.main' : 'error.main' }}
+                    >
+                      {scan.complianceScore}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip label={chipCfg.label} color={chipCfg.color} size="small" />
+                      {scan.isDemo && <Chip label="DEMO" size="small" color="warning" variant="outlined" sx={{ height: 18, fontSize: '0.55rem' }} />}
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(scan.timestamp).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                      </Typography>
+                      {scan.pdfData && (
+                        <IconButton
+                          size="small"
+                          component="a"
+                          href={scan.pdfData}
+                          download={`Jarvis_Compliance_Report_${scan.productName || 'Product'}.pdf`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <DownloadIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      <ArrowForwardIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: 16 }} />
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Box>
       ) : (
+        /* Desktop Table */
         <TableContainer component={Paper}>
           <Table>
             <TableHead>

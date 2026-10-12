@@ -92,10 +92,10 @@
   @keyframes jarvis-point { from { opacity: .25; transform: scale(.7); } to { opacity: 1; transform: scale(1.35); } }
   @media (prefers-reduced-motion: reduce) { .jarvis-scan-line, .jarvis-scan-point { animation: none; } }
   /* Metallic silver visual system. These rules override the legacy accent colours only. */
-  .dashboard-theme, .dashboard-magma { background-color: #050505 !important; background-image: linear-gradient(rgba(192,192,192,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(192,192,192,.025) 1px, transparent 1px), radial-gradient(circle at 82% 14%, rgba(192,192,192,.10), transparent 25rem) !important; background-size: 52px 52px, 52px 52px, auto !important; }
+  .dashboard-theme, .dashboard-magma { background-color: #000000 !important; background-image: linear-gradient(rgba(192,192,192,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(192,192,192,.025) 1px, transparent 1px), radial-gradient(circle at 82% 14%, rgba(192,192,192,.10), transparent 25rem) !important; background-size: 52px 52px, 52px 52px, auto !important; }
   .dashboard-theme .MuiCard-root, .dashboard-theme .MuiPaper-root, .dashboard-theme .MuiTableContainer-root { background: #111111 !important; border-color: #2a2a2a !important; box-shadow: inset 0 1px 0 rgba(232,232,232,.04) !important; }
   .dashboard-theme .MuiCard-root:hover { border-color: #555555 !important; box-shadow: inset 0 1px 0 rgba(232,232,232,.07), 0 10px 28px rgba(0,0,0,.25) !important; }
-  .dashboard-theme .MuiTypography-root { color: #f2f2f2 !important; }
+  .dashboard-theme .MuiTypography-root { color: #ffffff !important; }
   .dashboard-theme .MuiTableCell-root { color: #a3a3a3 !important; border-color: #2a2a2a !important; }
   .dashboard-theme .MuiTableHead-root .MuiTableCell-root { background: #161616 !important; color: #7a7a7a !important; }
   .dashboard-theme .MuiTableRow-hover:hover { background: rgba(192,192,192,.055) !important; }
@@ -120,4 +120,15 @@
   .jarvis-scan-line { background: #e8e8e8; box-shadow: 0 0 16px 5px rgba(192,192,192,.55); }
   .jarvis-scan-point { background: #e8e8e8; box-shadow: 0 0 9px #c0c0c0; }
   .jarvis-processing .MuiCircularProgress-root, .jarvis-processing .MuiLinearProgress-bar, .jarvis-processing .MuiStepIcon-root.Mui-active, .jarvis-processing .MuiStepIcon-root.Mui-completed, .jarvis-processing .MuiStepLabel-label.Mui-active { color: #e8e8e8 !important; background-color: #e8e8e8 !important; filter: drop-shadow(0 0 6px rgba(192,192,192,.5)); }
+
+  /* Mobile responsiveness helpers */
+  @media (max-width: 600px) {
+    html, body { overflow-x: hidden; }
+    .MuiContainer-root { padding-left: 12px !important; padding-right: 12px !important; }
+    .MuiTableContainer-root { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .jarvis-scanner .MuiGrid-container, .jarvis-report .MuiGrid-container { margin-left: 0; margin-right: 0; width: 100%; }
+    .jarvis-scan-overlay { background-size: 28px 2px, 2px 28px, 28px 2px, 2px 28px, 28px 2px, 2px 28px, 28px 2px, 2px 28px !important; }
+    .MuiAlert-root .MuiAlertTitle-root { font-size: 0.85rem; }
+    .MuiAccordionSummary-content { flex-wrap: wrap; gap: 4px; }
+  }
 }

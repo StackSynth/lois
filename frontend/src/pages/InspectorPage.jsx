@@ -23,6 +23,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import InputAdornment from '@mui/material/InputAdornment';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -32,6 +34,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const STATUS_CHIP = {
   COMPLIANT: { label: 'Compliant', color: 'success' },
@@ -41,6 +44,8 @@ const STATUS_CHIP = {
 
 export default function InspectorPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -104,23 +109,23 @@ export default function InspectorPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 }, px: { xs: 2, md: 3 } }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-        <AdminPanelSettingsIcon color="primary" sx={{ fontSize: 32 }} />
-        <Typography variant="h4" fontWeight={700}>Inspector Console</Typography>
+        <AdminPanelSettingsIcon color="primary" sx={{ fontSize: { xs: 26, md: 32 } }} />
+        <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight={700}>Inspector Console</Typography>
       </Box>
-      <Typography variant="subtitle1" sx={{ mb: 3 }}>Review scan history, filter results, and generate audit reports</Typography>
+      <Typography variant={isMobile ? 'body2' : 'subtitle1'} sx={{ mb: 3 }}>Review scan history, filter results, and generate audit reports</Typography>
 
       {/* Stats */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: 3 }}>
         {statCards.map(card => (
           <Grid item xs={6} sm key={card.label}>
             <Card sx={{ '&:hover': { boxShadow: 3 } }}>
-              <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2.5 }}>
-                <Box sx={{ color: card.color, mb: 1 }}>{card.icon}</Box>
-                <Typography variant="h4" fontWeight={800} color={card.color}>{card.value}</Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{card.label}</Typography>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: isMobile ? 1.5 : 2.5, px: isMobile ? 1 : 2 }}>
+                <Box sx={{ color: card.color, mb: 0.5 }}>{card.icon}</Box>
+                <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight={800} color={card.color}>{card.value}</Typography>
+                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: isMobile ? '0.6rem' : undefined }}>{card.label}</Typography>
               </CardContent>
             </Card>
           </Grid>
@@ -128,28 +133,30 @@ export default function InspectorPage() {
       </Grid>
 
       {/* Controls */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' }, flexWrap: 'wrap' }}>
         <TextField
           placeholder="Search by product name or manufacturer..."
           size="small"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          sx={{ flex: 1, minWidth: 250 }}
+          sx={{ flex: 1, minWidth: { xs: '100%', sm: 250 } }}
           InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
         />
-        <ToggleButtonGroup value={filter} exclusive onChange={(e, v) => v && setFilter(v)} size="small">
-          <ToggleButton value="ALL">All</ToggleButton>
-          <ToggleButton value="COMPLIANT">✓ Compliant</ToggleButton>
-          <ToggleButton value="NON_COMPLIANT">✕ Non-Compliant</ToggleButton>
-          <ToggleButton value="DEMO">🧪 Demo</ToggleButton>
-        </ToggleButtonGroup>
+        <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', mx: { xs: -2, sm: 0 }, px: { xs: 2, sm: 0 } }}>
+          <ToggleButtonGroup value={filter} exclusive onChange={(e, v) => v && setFilter(v)} size="small" sx={{ flexWrap: 'nowrap' }}>
+            <ToggleButton value="ALL">All</ToggleButton>
+            <ToggleButton value="COMPLIANT">✓ Compliant</ToggleButton>
+            <ToggleButton value="NON_COMPLIANT" sx={{ whiteSpace: 'nowrap' }}>✕ Non-Comp.</ToggleButton>
+            <ToggleButton value="DEMO">🧪 Demo</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
       </Box>
 
-      {/* Table */}
+      {/* Content */}
       {filteredScans.length === 0 ? (
         <Card>
-          <CardContent sx={{ textAlign: 'center', py: 8 }}>
-            <AssignmentIcon sx={{ fontSize: 56, color: 'text.secondary', mb: 2, opacity: 0.4 }} />
+          <CardContent sx={{ textAlign: 'center', py: { xs: 5, md: 8 } }}>
+            <AssignmentIcon sx={{ fontSize: { xs: 40, md: 56 }, color: 'text.secondary', mb: 2, opacity: 0.4 }} />
             <Typography variant="h6" color="text.secondary">{scans.length === 0 ? 'No scans yet' : 'No matching scans'}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {scans.length === 0 ? 'Scan a product label or try a demo to get started.' : 'Try adjusting your search or filter criteria.'}
@@ -159,7 +166,51 @@ export default function InspectorPage() {
             )}
           </CardContent>
         </Card>
+      ) : isMobile ? (
+        /* Mobile Card Layout */
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {filteredScans.map(scan => {
+            const mfr = scan.extractedFields?.find(f => f.field === 'manufacturer')?.value || '—';
+            const chipCfg = STATUS_CHIP[scan.overallStatus] || { label: scan.overallStatus, color: 'default' };
+            return (
+              <Card
+                key={scan.id}
+                onClick={() => navigate(`/report/${scan.id}`)}
+                sx={{ cursor: 'pointer', '&:active': { transform: 'scale(0.98)' }, transition: 'transform 0.15s ease' }}
+              >
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Box sx={{ minWidth: 0, flex: 1, mr: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Typography variant="body2" fontWeight={700} noWrap>{scan.productName}</Typography>
+                        {scan.isDemo && <Chip label="DEMO" size="small" color="warning" variant="outlined" sx={{ height: 18, fontSize: '0.55rem' }} />}
+                      </Box>
+                      <Typography variant="caption" color="text.secondary" noWrap>{mfr}</Typography>
+                    </Box>
+                    <Typography
+                      variant="h6"
+                      fontWeight={800}
+                      sx={{ color: scan.complianceScore >= 85 ? 'success.main' : scan.complianceScore >= 50 ? 'warning.main' : 'error.main' }}
+                    >
+                      {scan.complianceScore}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Chip label={chipCfg.label} color={chipCfg.color} size="small" />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(scan.timestamp).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                      </Typography>
+                      <ArrowForwardIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: 16 }} />
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Box>
       ) : (
+        /* Desktop Table */
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
