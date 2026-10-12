@@ -15,6 +15,12 @@ import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Slide from '@mui/material/Slide';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SearchIcon from '@mui/icons-material/Search';
@@ -27,14 +33,25 @@ import ImageIcon from '@mui/icons-material/Image';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 export default function ScannerPage() {
   const navigate = useNavigate();
   const toast = useToastContext();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
+  const [methodDialogOpen, setMethodDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -159,7 +176,12 @@ export default function ScannerPage() {
       setPreview(null);
       setQuality(null);
     } catch {
-      toast.warning('Camera access denied. Please use file upload instead.');
+      // If live camera is not supported or permissions are restricted, fallback to device camera input
+      if (cameraInputRef.current) {
+        cameraInputRef.current.click();
+      } else {
+        toast.warning('Camera access denied. Please use file upload instead.');
+      }
     }
   };
 
@@ -256,38 +278,256 @@ export default function ScannerPage() {
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setMethodDialogOpen(true)}
               sx={{
-                p: { xs: 4, md: 7 }, textAlign: 'center', cursor: 'pointer',
+                p: { xs: 3.5, md: 6 },
+                textAlign: 'center',
+                cursor: 'pointer',
                 border: '2px dashed',
                 borderColor: isDragging ? 'primary.main' : 'divider',
                 bgcolor: isDragging ? 'action.hover' : 'transparent',
-                borderRadius: 3, transition: 'all 0.2s ease',
-                '&:hover': { borderColor: 'primary.light', bgcolor: 'action.hover' },
-                m: 2,
+                borderRadius: 3,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  borderColor: 'primary.light',
+                  bgcolor: 'action.hover',
+                  transform: 'translateY(-1px)',
+                },
+                m: { xs: 1.5, sm: 2 },
               }}
             >
-              <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleFile(e.target.files[0])} style={{ display: 'none' }} />
-              <Box sx={{ width: 64, height: 64, display: 'grid', placeItems: 'center', mx: 'auto', mb: 2, borderRadius: 2, bgcolor: 'secondary.light', color: 'secondary.dark' }}><CloudUploadIcon sx={{ fontSize: 34 }} /></Box>
-              <Typography variant="h6" gutterBottom>
+              {/* File input WITHOUT capture attribute for selecting from photos, gallery, or files */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  handleFile(e.target.files[0]);
+                  e.target.value = '';
+                }}
+                style={{ display: 'none' }}
+              />
+              {/* Camera input WITH capture attribute for opening camera app on mobile */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => {
+                  handleFile(e.target.files[0]);
+                  e.target.value = '';
+                }}
+                style={{ display: 'none' }}
+              />
+
+              <Box sx={{ width: 64, height: 64, display: 'grid', placeItems: 'center', mx: 'auto', mb: 2, borderRadius: 2, bgcolor: 'secondary.light', color: 'secondary.dark' }}>
+                <CloudUploadIcon sx={{ fontSize: 34 }} />
+              </Box>
+              <Typography variant="h6" gutterBottom fontWeight={700}>
                 {isDragging ? 'Drop your image here' : 'Upload product label'}
               </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Drag and drop an image here, or click to browse
+              <Typography variant="body2" color="text.secondary" gutterBottom sx={{ maxWidth: 460, mx: 'auto' }}>
+                Tap here to take a picture or import a file · Drag and drop supported
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
                 JPG, PNG or WEBP · Maximum 20MB
               </Typography>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  flexWrap: 'wrap',
+                  mt: 1,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Button
+                  variant="outlined"
+                  startIcon={<CameraAltIcon />}
+                  onClick={() => handleCameraCapture()}
+                  sx={{ borderRadius: 2, px: 2.5 }}
+                >
+                  Take Picture
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<UploadFileIcon />}
+                  onClick={() => fileInputRef.current?.click()}
+                  sx={{ borderRadius: 2, px: 2.5 }}
+                >
+                  Import File
+                </Button>
+              </Box>
             </Paper>
-            <Divider sx={{ mx: 2 }}><Typography variant="caption" color="text.secondary">OR</Typography></Divider>
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Button variant="outlined" startIcon={<CameraAltIcon />} onClick={(e) => { e.stopPropagation(); handleCameraCapture(); }}>
-                Use Camera
-              </Button>
-            </Box>
           </CardContent>
         </Card>
       )}
+
+      {/* Upload Method Chooser Dialog / Action Sheet */}
+      <Dialog
+        open={methodDialogOpen}
+        onClose={() => setMethodDialogOpen(false)}
+        TransitionComponent={isMobile ? Transition : undefined}
+        keepMounted
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: { xs: '20px 20px 0 0', sm: 3 },
+            position: { xs: 'fixed', sm: 'relative' },
+            bottom: { xs: 0, sm: 'auto' },
+            m: { xs: 0, sm: 2 },
+            width: { xs: '100%', sm: 'auto' },
+            p: { xs: 1.5, sm: 2 },
+            bgcolor: 'background.paper',
+            backgroundImage: 'none',
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1, px: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'secondary.light', display: 'grid', placeItems: 'center', color: 'secondary.dark' }}>
+              <CloudUploadIcon />
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={800}>Upload Product Label</Typography>
+              <Typography variant="caption" color="text.secondary">How would you like to provide the label?</Typography>
+            </Box>
+          </Box>
+          <IconButton onClick={() => setMethodDialogOpen(false)} size="small" aria-label="close">
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+
+        <DialogContent sx={{ px: 1, py: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {/* Option 1: Take Picture */}
+          <Paper
+            variant="outlined"
+            onClick={() => {
+              setMethodDialogOpen(false);
+              handleCameraCapture();
+            }}
+            sx={{
+              p: 2,
+              borderRadius: 2.5,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              transition: 'all 0.2s',
+              border: '1.5px solid',
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'secondary.main',
+                bgcolor: 'action.hover',
+                transform: 'translateY(-1px)',
+              },
+            }}
+          >
+            <Box sx={{ width: 48, height: 48, borderRadius: 2.5, bgcolor: 'secondary.light', display: 'grid', placeItems: 'center', color: 'secondary.dark', flexShrink: 0 }}>
+              <CameraAltIcon fontSize="medium" />
+            </Box>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography variant="subtitle2" fontWeight={800}>
+                Take a Picture
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Capture live photo using camera viewfinder
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 0.8 }} onClick={(e) => e.stopPropagation()}>
+                <Chip
+                  size="small"
+                  label="Live Scanner"
+                  onClick={() => {
+                    setMethodDialogOpen(false);
+                    handleCameraCapture();
+                  }}
+                  clickable
+                  color="secondary"
+                  variant="outlined"
+                  sx={{ fontWeight: 600 }}
+                />
+                <Chip
+                  size="small"
+                  label="Camera App"
+                  onClick={() => {
+                    setMethodDialogOpen(false);
+                    cameraInputRef.current?.click();
+                  }}
+                  clickable
+                  variant="outlined"
+                  sx={{ fontWeight: 600 }}
+                />
+              </Box>
+            </Box>
+          </Paper>
+
+          {/* Option 2: Import File / Drag & Drop */}
+          <Paper
+            variant="outlined"
+            onClick={() => {
+              setMethodDialogOpen(false);
+              fileInputRef.current?.click();
+            }}
+            onDrop={(e) => {
+              setMethodDialogOpen(false);
+              handleDrop(e);
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            sx={{
+              p: 2,
+              borderRadius: 2.5,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              transition: 'all 0.2s',
+              border: '1.5px solid',
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'primary.main',
+                bgcolor: 'action.hover',
+                transform: 'translateY(-1px)',
+              },
+            }}
+          >
+            <Box sx={{ width: 48, height: 48, borderRadius: 2.5, bgcolor: 'primary.light', display: 'grid', placeItems: 'center', color: 'primary.contrastText', flexShrink: 0 }}>
+              <UploadFileIcon fontSize="medium" />
+            </Box>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography variant="subtitle2" fontWeight={800}>
+                Import File or Photo
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Choose from gallery, files, or drag & drop here
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 0.8 }} onClick={(e) => e.stopPropagation()}>
+                <Chip
+                  size="small"
+                  label="Browse Files / Gallery"
+                  onClick={() => {
+                    setMethodDialogOpen(false);
+                    fileInputRef.current?.click();
+                  }}
+                  clickable
+                  color="primary"
+                  variant="outlined"
+                  sx={{ fontWeight: 600 }}
+                />
+              </Box>
+            </Box>
+          </Paper>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 1, pt: 0.5, pb: 0.5 }}>
+          <Button fullWidth variant="text" color="inherit" onClick={() => setMethodDialogOpen(false)} sx={{ borderRadius: 2 }}>
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Camera View */}
       {cameraActive && (
